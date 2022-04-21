@@ -1,5 +1,4 @@
 //const GoogleTranslator = require('@translate-tools/core/translators/GoogleTranslator').GoogleTranslator;
-//const translate = require("translate");
 const { google } = require('googleapis');
 const tmi = require('tmi.js');
 var XMLHttpRequest = require('xhr2');
