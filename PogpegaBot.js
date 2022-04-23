@@ -48,6 +48,12 @@ fs.readFile('count.json', (err, data) =>
   if (err) throw err;
   count = new Map(Object.entries(JSON.parse(data)));
 });
+var osuUsernames;
+fs.readFile('osuUsernames.json', (err, data) =>
+{
+  if (err) throw err;
+  osuUsernames = new Map(Object.entries(JSON.parse(data)));
+});
 var emojiDatabase;
 fs.readFile('emojiMapping.json', (err, data) =>
 {
@@ -103,6 +109,16 @@ function saveCounter()
   {
     if (err) throw err;
     console.log(`* Saved`);
+  });
+}
+function saveUsernames() 
+{
+  console.log(`* Saving osu usernames`);
+  var data = JSON.stringify(Object.fromEntries(osuUsernames))
+  fs.writeFile("osuUsernames.json", data, (err) =>
+  {
+    if (err) throw err;
+    console.log(`* Saved osu usernames`);
   });
 }
 const commandList = [">led", ">pogpegafarm", ">deceit", "!prefix", "Use code", "!bored", "Get 20% off Manscaped with code", "Pogpega /", ">maxfarm", "!pull", "!skin", ">repeat", "!roll", ">online", "!cock", ">cock", ">rice", "!rice", ">ping", "!math 9+10" + "!rea" + ">pogpegas", ">give", ">generate", ">translate", ">chat", ">homies"];
@@ -225,6 +241,7 @@ function onMessageHandler(target, context, msg, self)
     refreshFitbit();
     updateFitbit();
     startup = false;
+    client.say("#thatonebotwhospamspogpega", "/me Pogpega Starting PogpegaBot TriFi");
   }
   // Remove whitespace from message
   var commandName = msg.trim();
@@ -581,6 +598,24 @@ function onMessageHandler(target, context, msg, self)
     {
       client.say(target, '/me Pogpega @' + context.username + ' You rolled these nuts lmao gottem Chatting');
     }
+    else if (commandName === ">link") 
+    {
+      if (osuUsernames.has(context.username)) 
+      {
+        client.say(target, "/me Pogpega @" + context.username + " is currently linked to osu user " + osuUsernames.get(context.username));
+      }
+      else
+      {
+        client.say(target, "/me Pogpega @" + context.username + " is not currently linked to any osu user. Use >link {username} to link it");
+      }
+    }
+    else if (commandName.startsWith(">link ")) 
+    {
+      commandName = commandName.substring(6);
+      osuUsernames.set(context.username, commandName);
+      saveUsernames();
+      client.say(target, "/me Pogpega @" + context.username + " has been linked to osu user " + commandName);
+    }
     else if (commandName === '>online') 
     {
       client.say(target, "/me Pogpega Chatting if you can see this message, ed is offline");
@@ -595,10 +630,22 @@ function onMessageHandler(target, context, msg, self)
       client.say(target, "/me Pogpega PINGED");
       console.log(`* PINGED`);
     }
-    else if (commandName.startsWith(">rs ") || commandName.startsWith(">c ") || commandName.startsWith(">sc "))
+    else if (commandName.startsWith(">rs ") || commandName.startsWith(">c ") || commandName.startsWith(">sc ") || commandName.startsWith(">osutop "))
     {
       discordTarget = target;
       dcClient.channels.cache.get("967134443393400922").send(commandName);
+    }
+    else if (commandName === ">rs" || commandName === ">c" || commandName === ">sc" || commandName === ">osutop") 
+    {
+      if (osuUsernames.has(context.username)) 
+      {
+        discordTarget = target;
+        dcClient.channels.cache.get("967134443393400922").send(commandName + " " + osuUsernames.get(context.username));
+      }
+      else
+      {
+        client.say(target, "/me Pogpega @" + context.username + " is not currently linked to an osu user, do >link {osu username} to link it");
+      }
     }
     else if (context.username === "fossabot" && commandName.includes(" \"") && soTure)
     {
@@ -631,7 +678,8 @@ function onMessageHandler(target, context, msg, self)
         resetLetters();
         correctPogu = false;
         client.say(target, "/me Pogpega wordle has started, use >guess to guess a 5 letter word");
-      } else
+      }
+      else
       {
         client.say(target, "/me Pogpega there is already a wordle active");
       }
