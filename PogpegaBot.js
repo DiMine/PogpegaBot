@@ -9,6 +9,14 @@ const LED = require('onoff').Gpio;
 //const { Server } = require("socket.io");
 //const io = new Server(7270);
 //var makePwn = require("adafruit-pca9685");
+const { Client, Intents } = require('discord.js');
+const dcClient = new Client({
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES,
+    Intents.FLAGS.DIRECT_MESSAGES
+  ]
+});
 var offline = false;
 var pinged = true;
 var startup = true;
@@ -18,6 +26,7 @@ var fitbitSleep;
 var fitbitTokens;
 var status = "";
 var wordle;
+var discordTarget = "#btmc";
 var guess;
 var correctPogu = false;
 var guessCounter = 0;
@@ -166,6 +175,34 @@ const opts = {
     'DiMineosu'
   ]
 };
+
+
+dcClient.once('ready', () =>
+{
+  console.log("Discord client ready");
+  dcClient.user.setActivity("Spamming Pogpega");
+})
+dcClient.login(process.env.DISCORD_TOKEN);
+dcClient.on('messageCreate', (message) =>
+{
+  try 
+  {
+    console.log(message.embeds);
+    if (message.content.includes(" no recent plays in") || message.content.includes("no scores on the map")) 
+    {
+      client.say(discordTarget, "/me Pogpega Chatting " + message.content.substring(2, message.content.length - 2).replace(/`/g, ''));
+    }
+    else 
+    {
+      scorepost = message.embeds[0].author.name;
+      scorepost = scorepost.concat(" ").concat(message.embeds[0].description.substring(message.embeds[0].description.indexOf(">") + 1).replace(/\*/g, ''))
+      scorepost = scorepost.concat(" | ").concat(message.embeds[0].footer.text);
+      scorepost = scorepost.replace(/▸/g, '|').replace(/_/g, '')
+      client.say(discordTarget, "/me Pogpega " + scorepost);
+    }
+  }
+  catch (err) { console.log(err.message); }
+})
 
 // Create a client with our options
 const client = new tmi.client(opts);
@@ -558,6 +595,11 @@ function onMessageHandler(target, context, msg, self)
       client.say(target, "/me Pogpega PINGED");
       console.log(`* PINGED`);
     }
+    else if (commandName.startsWith(">rs ") || commandName.startsWith(">c ") || commandName.startsWith(">sc "))
+    {
+      discordTarget = target;
+      dcClient.channels.cache.get("967134443393400922").send(commandName);
+    }
     else if (context.username === "fossabot" && commandName.includes(" \"") && soTure)
     {
       client.say(target, "/me Pogpega reeferSad so ture")
@@ -775,7 +817,7 @@ function onMessageHandler(target, context, msg, self)
     {
       commandName = commandName.substring(10);
       var contains = false;
-      for (const text of blacklist) 
+      for (const text of blacklist.blacklist) 
       {
         if (commandName.toLowerCase().includes(text)) 
         {
@@ -799,7 +841,7 @@ function onMessageHandler(target, context, msg, self)
             contains = false;
             var tempString = "";
             tempString = tempString.concat(resp.output);
-            for (const text of blacklist) 
+            for (const text of blacklist.blacklist) 
             {
               if (tempString.includes(text)) 
               {
@@ -821,7 +863,8 @@ function onMessageHandler(target, context, msg, self)
               client.say(target, `/me Pogpega Chatting ` + tempOut);
             }
           })()
-        } catch (err) 
+        }
+        catch (err) 
         {
           client.say(target, "/me Pogpega Chatting error: " + err);
         }
@@ -830,7 +873,7 @@ function onMessageHandler(target, context, msg, self)
     else if (commandName === ">status")
     {
       client.say(target, "/me Pogpega " + status);
-    } 
+    }
     else if (commandName.startsWith(">status ") && context.username === "thatoneguywhospamspogpega") 
     {
       commandName = commandName.substring(8);
@@ -962,7 +1005,7 @@ function onMessageHandler(target, context, msg, self)
       {
         refreshFitbit();
       }
-    } 
+    }
     else
     {
       if (chance(200))
@@ -982,7 +1025,7 @@ function onMessageHandler(target, context, msg, self)
         refreshFitbit();
       }
     }
-  } 
+  }
   catch (errororor)
   {
     client.say(target, "/me Pogpega Chatting Error: " + errororor.message);
@@ -1123,21 +1166,55 @@ function checkToxic(target, user, sentence)
       (err, response) =>
       {
         if (err) console.log(err.message);
-        try{
-        console.log(JSON.stringify(response.data, null, 2));
-        var scores = [
-          "Toxicity: " + response.data.attributeScores.SEVERE_TOXICITY.summaryScore.value,
-          "Profanity: " + response.data.attributeScores.PROFANITY.summaryScore.value,
-          "Identity attack: " + response.data.attributeScores.IDENTITY_ATTACK.summaryScore.value,
-          "Threat: " + response.data.attributeScores.THREAT.summaryScore.value,
-          "Sexual: " + response.data.attributeScores.SEXUALLY_EXPLICIT.summaryScore.value
-        ]
-        console.log(scores);
-        client.say(target, "/me Pogpega @" + user + " " + scores);
-      } catch (eerrro) {
-        console.log(eerrro.message);
-        client.say(target, "/me Pogpega Chatting invalid message (the bot thinks its not in english) @" + user);
-      }
+        try
+        {
+          console.log(JSON.stringify(response.data, null, 2));
+          var scores2 = [
+            response.data.attributeScores.SEVERE_TOXICITY.summaryScore.value,
+            response.data.attributeScores.PROFANITY.summaryScore.value,
+            response.data.attributeScores.IDENTITY_ATTACK.summaryScore.value,
+            response.data.attributeScores.THREAT.summaryScore.value,
+            response.data.attributeScores.SEXUALLY_EXPLICIT.summaryScore.value
+          ]
+          var scores = [
+            "Toxicity: " + parseFloat((response.data.attributeScores.SEVERE_TOXICITY.summaryScore.value * 100).toFixed(2)) + "%",
+            "Profanity: " + parseFloat((response.data.attributeScores.PROFANITY.summaryScore.value * 100).toFixed(2)) + "%",
+            "Identity attack: " + parseFloat((response.data.attributeScores.IDENTITY_ATTACK.summaryScore.value * 100).toFixed(2)) + "%",
+            "Threat: " + parseFloat((response.data.attributeScores.THREAT.summaryScore.value * 100).toFixed(2)) + "%",
+            "Sexual: " + parseFloat((response.data.attributeScores.SEXUALLY_EXPLICIT.summaryScore.value * 100).toFixed(2)) + "%"
+          ]
+          var tempEmote = " ";
+          var maxStat = scores2.indexOf(Math.max.apply(null, scores2));
+          if (scores2[maxStat] > 0.9)
+          {
+            switch (maxStat)
+            {
+              case 0:
+                tempEmote = " PogO ";
+                break;
+              case 1:
+                tempEmote = " D: "
+                break;
+              case 2:
+                tempEmote = " WeirdChamp ";
+                break;
+              case 3:
+                tempEmote = " monkaW ";
+                break;
+              case 4:
+                tempEmote = " SUSSY ";
+                break;
+              default:
+                break;
+            }
+          }
+          client.say(target, "/me Pogpega @" + user + tempEmote + scores);
+        }
+        catch (eerrro) 
+        {
+          console.log(eerrro.message);
+          client.say(target, "/me Pogpega Chatting invalid message (the bot thinks its not in english) @" + user);
+        }
       });
   }).catch(err =>
   {
