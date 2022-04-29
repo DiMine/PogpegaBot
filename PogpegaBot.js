@@ -6,8 +6,8 @@ var { PythonShell } = require('python-shell');
 //var chatterBot = new PythonShell('ChatterBot.py');
 const LED = require('onoff').Gpio;
 //var rpio = require('rpio');
-//const { Server } = require("socket.io");
-//const io = new Server(7270);
+const { Server } = require("socket.io");
+const io = new Server(7270);
 //var makePwn = require("adafruit-pca9685");
 const { Client, Intents } = require('discord.js');
 const dcClient = new Client({
@@ -37,6 +37,7 @@ var letters = [];
 const fs = require('fs');
 var Gpio = require('pigpio').Gpio;
 const Http = new XMLHttpRequest();
+const xhr = new XMLHttpRequest();
 const cleverbot = require("cleverbot-free");
 //const fetch = require("node-fetch");
 const fetch = require('sync-fetch');
@@ -124,7 +125,9 @@ function saveUsernames()
 const commandList = [">led", ">pogpegafarm", ">deceit", "!prefix", "Use code", "!bored", "Get 20% off Manscaped with code", "Pogpega /", ">maxfarm", "!pull", "!skin", ">repeat", "!roll", ">online", "!cock", ">cock", ">rice", "!rice", ">ping", "!math 9+10" + "!rea" + ">pogpegas", ">give", ">generate", ">translate", ">chat", ">homies"];
 var guessing = false;
 var guessIndex = 0;
-
+io.on("connection", (socket) => {
+  socket.emit("test", "does this work now?")
+})
 // Ping an api to see if BTMC is live
 function ping() 
 {
@@ -148,6 +151,30 @@ function ping()
       console.log("BTMC is now online");
       ledLive.writeSync(1);
     }
+  }
+}
+
+function checkFollow(userID)
+{
+  if (userID === '726306594') 
+  {
+    return true;
+  }
+  var following = fetch("https://api.twitch.tv/helix/users/follows?to_id=726306594&from_id=" + userID + "&?" + Date.now(), {
+    headers: {
+      Authorization: process.env.TWITCH_TOKEN,
+      "Client-Id": process.env.TWITCH_CLIENT_ID,
+    },
+    method: "GET"
+  }).json();
+  console.log("Checked follower status");
+  if (following.total === 1) 
+  {
+    return true;
+  }
+  else 
+  {
+    return false;
   }
 }
 
@@ -201,20 +228,49 @@ dcClient.once('ready', () =>
 dcClient.login(process.env.DISCORD_TOKEN);
 dcClient.on('messageCreate', (message) =>
 {
+  console.log(message);
   try 
   {
     console.log(message.embeds);
     if (message.content.includes(" no recent plays in") || message.content.includes("no scores on the map")) 
     {
-      client.say(discordTarget, "/me Pogpega Chatting " + message.content.substring(2, message.content.length - 2).replace(/`/g, ''));
+      client.action(discordTarget, "Pogpega Chatting " + message.content.substring(2, message.content.length - 2).replace(/`/g, ''));
     }
     else 
     {
       scorepost = message.embeds[0].author.name;
-      scorepost = scorepost.concat(" ").concat(message.embeds[0].description.substring(message.embeds[0].description.indexOf(">") + 1).replace(/\*/g, ''))
+      scorepost = scorepost.concat(" ").concat(message.embeds[0].description.replace(/\*/g, ''));
+      if (scorepost.startsWith("**Recent osu")) 
+      {
+        scorepost = scorepost.substring(message.embeds[0].description.indexOf(">") + 1);
+      }
       scorepost = scorepost.concat(" | ").concat(message.embeds[0].footer.text);
-      scorepost = scorepost.replace(/▸/g, '|').replace(/_/g, '')
-      client.say(discordTarget, "/me Pogpega " + scorepost);
+      scorepost = scorepost.replace(/▸/g, '|').replace(/_/g, '').replace(/Score Set /g, '').replace(/<:rankingS:462313719762911233>/g, 'S').replace(/<:rankingSH:462313722732347401>/g, 'SH').replace(/<:rankingA:462313719083565066>/g, 'A').replace(/<:rankingB:462313719574167562>/g, 'B').replaceAll("<:rankingX:462313722736672780>", 'X').replaceAll("<:rankingXH:462313722556186626>", 'XH').replaceAll("<:rankingF:462313719741808670>", 'F').replaceAll("<:rankingC:462313719511121921>", 'C').replaceAll("<:rankingD:462313719767105536>", 'D');
+      scorepost = scorepost.replace("1. ", '| 1⃣').replace("2. ", '| 2⃣').replace("3. ", '| 3⃣').replace("4. ", '| 4⃣').replace("5. ", '| 5⃣');
+      if (scorepost.startsWith("Top 5 osu! Standard Plays for")) 
+      {
+        scorepost = scorepost.replace("Top 5 osu! Standard Plays for", "").replaceAll('(https://osu.ppy.sh/b', " | ");
+        scorepost = scorepost.split("|");
+        scorepost[2] = scorepost[2].substring(scorepost[2].indexOf("+") - 1);
+        scorepost[6] = "";
+        scorepost[9] = "";
+        scorepost[11] = scorepost[11].substring(scorepost[11].indexOf("+") - 1);
+        scorepost[15] = "";
+        scorepost[18] = "";
+        scorepost[20] = scorepost[20].substring(scorepost[20].indexOf("+") - 1);
+        scorepost[24] = "";
+        scorepost[27] = "";
+        scorepost[29] = scorepost[29].substring(scorepost[29].indexOf("+") - 1);
+        scorepost[33] = "";
+        scorepost[36] = "";
+        scorepost[38] = scorepost[38].substring(scorepost[38].indexOf("+") - 1);
+        scorepost[42] = "";
+        scorepost[45] = "";
+        console.log(scorepost);
+        scorepost = scorepost.join('|');
+        scorepost = scorepost.replaceAll("||", "|");
+      }
+      client.action(discordTarget, "Pogpega " + scorepost);
     }
   }
   catch (err) { console.log(err.message); }
@@ -491,14 +547,22 @@ function onMessageHandler(target, context, msg, self)
       if (commandName.toLowerCase() === "location")
       {
         client.say(target, "/me Pogpega The servo is at location " + servoLocation);
-      } else
+      } 
+      else
       {
         try
         {
           commandName = parseInt(commandName);
-          motor.servoWrite(commandName); // Range 500-2500
-          client.say(target, "/me Pogpega Moving servo from " + servoLocation + " to " + commandName);
-          servoLocation = commandName;
+          if (commandName != 0) 
+          {
+            motor.servoWrite(commandName); // Range 500-2500
+            client.say(target, "/me Pogpega Moving servo from " + servoLocation + " to " + commandName);
+            servoLocation = commandName;
+          }
+          else
+          {
+            client.say(target, "/me Pogpega Tssk number has to be from 500-2500");
+          }
         }
         catch (erroneous)
         {
@@ -564,6 +628,15 @@ function onMessageHandler(target, context, msg, self)
       client.say(target, '/me Pogpega 👆 Use code "Pogpega" !!! ');
       console.log(`* balls`);
     }
+    else if (commandName.startsWith("Looks like the >rs function isnt working.") && context.username === 'thatonebotwhostartpogpega') 
+    {
+      client.say(target, "/me Pogpega ⚡ pepeMeltdown ⚡");
+    }
+    else if (commandName.startsWith(">deadchat"))
+    {
+      client.say(target, "/me Pogpega Chatting 𝐿𝑀𝒜𝒪. 𝒟𝐸𝒜𝒟 𝒞𝐻𝒜𝒯? 𝐼 𝒞𝒜𝒩𝒯 𝐵𝐸𝐿𝐼𝐸𝒱𝐸 𝐼𝒯. 𝒯𝐻𝐼𝒮 𝐼𝒮 𝒮𝒰𝒫𝐸𝑅 𝐹𝒰𝒩𝒩𝒴!! 𝒳𝒟𝒳𝒟𝒳𝒟. 𝐼𝐹 𝐼𝒯 𝐼𝒮 𝒯𝑅𝒰𝐸 𝒯𝐻𝒜𝒯 𝐼 𝒜𝑀 𝒯𝐻𝐸 𝒪𝒩𝐿𝒴 𝒪𝒩𝐸 𝐼𝒩 𝒯𝐻𝐼𝒮 𝒞𝒰𝑅𝑅𝐸𝒩𝒯 𝒞𝐻𝒜𝒯𝑅𝒪𝒪𝑀 𝒯𝐻𝐸𝒩 𝐼 𝒲𝐼𝐿𝐿 𝒞𝒪𝒩𝒮𝐼𝒟𝐸𝑅 𝒮𝐸𝒩𝒟𝐼𝒩𝒢 𝑅𝒜𝒩𝒟𝒪𝑀 𝑀𝐸𝒮𝒮𝒜𝒢𝐸𝒮 𝐿𝒪𝐿!!!! 𝒩𝒪 𝒪𝒩𝐸 𝐻𝒜𝒮 𝒯𝒜𝐿𝒦𝐸𝒟 𝐼𝒩 𝑀𝐼𝒩𝒰𝒯𝐸𝒮 𝒮𝒪 𝒯𝐻𝒜𝒯 𝑀𝒰𝒮𝒯 𝑀𝐸𝒜𝒩 𝐼 𝒜𝑀 𝒯𝐻𝐸 𝒪𝒩𝐿𝒴 𝒪𝒩𝐸 𝐻𝐸𝑅𝐸. 𝒟𝐸𝒜𝒟 𝒞𝐻𝒜𝒯 𝒳𝒟𝒟𝒟𝒟𝒟𝒟𝒟");
+      console.log(`* dead chat lmao`);
+    }
     else if (msg === 'Pogpega /' && chance(3)) 
     {
       client.say(target, '/me Pogpega / @' + context.username);
@@ -573,6 +646,13 @@ function onMessageHandler(target, context, msg, self)
     {
       client.say(target, '/me Pogpega Boolin we boolin');
       console.log(`* we boolin`);
+    }
+    else if (commandName.startsWith(">emit")) {
+      io.emit("test", "does this work")
+    }
+    else if (commandName.startsWith(">code")) 
+    {
+      client.say(target, "/me Pogpega @" + context['display-name'] + " Code for the PogpegaBot can be found at pogpe.ga/code");
     }
     else if (commandName === '>maxfarm') 
     {
@@ -593,6 +673,11 @@ function onMessageHandler(target, context, msg, self)
     {
       client.say(target, "/me Pogpega " + commandName.substring(7));
       console.log('* Chatting');
+    }
+    else if (commandName.startsWith('>remind ')) 
+    {
+      commandName = commandName.substring(8);
+      setTimeout(function() {client.say(target, "/me Pogpega @" + context['display-name'] + " " + commandName.substring(commandName.indexOf(" ")))}, parseInt(commandName) * 1000);
     }
     else if (commandName.startsWith('!roll') && chance(15)) 
     {
@@ -625,6 +710,16 @@ function onMessageHandler(target, context, msg, self)
       client.say(target, "/me Pogpega Chatting ed's cock is 72.7mm (2.86 inches)");
       console.log(`* nice cock`);
     }
+    else if (commandName === ">follow")
+    {
+      if (checkFollow(context['user-id'])) 
+      {
+        client.say(target, "/me Pogpega PointYou @" + context['display-name'] + " is following");
+      } else
+      {
+        client.say(target, "/me Pogpega Tssk @" + context['display-name'] + " is not following");
+      }
+    }
     else if (commandName.toLowerCase().includes("@homies") && chance(20)) 
     {
       client.say(target, "/me Pogpega PINGED");
@@ -640,12 +735,26 @@ function onMessageHandler(target, context, msg, self)
       if (osuUsernames.has(context.username)) 
       {
         discordTarget = target;
-        dcClient.channels.cache.get("967134443393400922").send(commandName + " " + osuUsernames.get(context.username));
+        dcClient.channels.cache.get("967134443393400922").send(commandName + ' "' + osuUsernames.get(context.username) + '"');
       }
       else
       {
         client.say(target, "/me Pogpega @" + context.username + " is not currently linked to an osu user, do >link {osu username} to link it");
       }
+    } 
+    else if (commandName.startsWith(">dm ")) 
+    {
+      commandName = commandName.substring(4);
+      dcClient.users.fetch("317080059003273217").then(user => user.send(context["display-name"] + ": " + commandName));
+      client.action(target, "Pogpega DMed the Pogpega MaN on discord");
+      console.log(context['display-name'] + " sent dm: " + commandName);
+    }
+    else if (commandName.startsWith(">dm2 ")) 
+    {
+      commandName = commandName.substring(5);
+      dcClient.users.fetch("211923182456668162").then(user => user.send(context["display-name"] + ": " + commandName)).catch(heDisabledDms => console.log(heDisabledDms.message));
+      client.action(target, "Pogpega DMed NekoPavel on discord");
+      console.log(context['display-name'] + " sent dm to NekoPavel: " + commandName);
     }
     else if (context.username === "fossabot" && commandName.includes(" \"") && soTure)
     {
@@ -950,7 +1059,7 @@ function onMessageHandler(target, context, msg, self)
         cleverbot(commandName, cbotHistory).then(resp =>
         {
           cbotHistory.push(commandName);
-          client.say(target, "/me Pogpega @" + context.username + " " + resp);
+          client.action(target, "Pogpega @" + context.username + " " + resp);
           console.log(resp);
           cbotHistory.push(resp);
         }).catch(err => client.say(target, "/me Pogpega Chatting Error: " + err.message));
@@ -961,7 +1070,7 @@ function onMessageHandler(target, context, msg, self)
         //client.say(target, "/me Pogpega pepeMeltdown too many requests (4s cooldown)");
       }
     }
-    else if (commandName.startsWith(">reset") && context.username === "thatoneguywhospamspogpega")
+    else if ((commandName.startsWith(">reset") || commandName.startsWith("GunL >reset")) && context.username === "thatoneguywhospamspogpega")
     {
       cbotHistory = [];
       client.say(target, "/me Pogpega Cleared the conversation");

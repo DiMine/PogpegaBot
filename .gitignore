@@ -1,12 +1,12 @@
 blacklist.json
 count.json
-db.sqlite3
-emojiMapping.json
-fitbit.json
-package.json
-package-lock.json
-osupingbot.js
-osuUsernames.json
+db.sqlite3 # database for chatterbot (the >chat command)
+emojiMapping.json # text to emoji database for the >emojify command
+fitbit.json # contains my fitbit oauth token stuff
+package.json # default javascript stuffs
+package-lock.json # more default javascript stuff
+osupingbot.js # the thing that does the >rs
+osuUsernames.json # links twitch usernames to osu usernames so they can just do >rs
 
 
 # EVERYTHING BELOW THIS LINE I JUST COPIED AND PASTED :Chatting:

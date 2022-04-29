@@ -4,9 +4,12 @@ var XMLHttpRequest = require('xhr2');
 var offline = false;
 const Http = new XMLHttpRequest();
 require('dotenv').config();
-var exec = require('child_process').exec;
+var { exec, spawn } = require('child_process');
 var pogpegaBot;
-
+const Discord = require('discord-user-bots');
+var dcClient = new Discord.Client(process.env.DISCORD_ALT_TOKEN);
+//var osupingBot = exec('osupingbot.js');
+var lastTime = 0;
 // Ping an api to see if BTMC is live
 function ping() 
 {
@@ -46,6 +49,8 @@ const opts = {
     'ThatOneBotWhoSpamsPogpega',
     'ThatOneBotWhoPingsPogpega',
     'btmc',
+    'nekochattingbot',
+    'nekopavel'
   ]
 };
 
@@ -96,12 +101,28 @@ function onMessageHandler(target, context, msg, self)
   {
     client.say(target, '/me Pogpega 👆 Turn it off and on again !!! ');
     console.log(`* gfuel`);
-  } 
-  else if (commandName === ">restart") 
+  }
+  /*else if (commandName === ">restart") 
   {
     client.say(target, "/me Pogpega Restarting PogpegaBot TriFi");
     pogpegaBot = exec('sh Start_PogpegaBot.sh');
     console.log("Started PogpegaBot");
+  }*/ else if (commandName.startsWith(">shock")) 
+  {
+    if (lastTime + 600000 < Date.now()) 
+    {
+      client.say(target, "/me Pogpega Looks like the >rs function isnt working. Lets fix that with a controlled shock MEGALUL Stab MrDestructoid");
+      dcClient = "";
+      dcClient = new Discord.Client(process.env.DISCORD_ALT_TOKEN);
+      /*osupingBot = exec('osupingbot.js');*/
+      console.log("Restarted osupingbot");
+      lastTime = Date.now();
+    }
+    else 
+    {
+      client.say(target, "/me Pogpega Tssk theres still " + Math.ceil(((lastTime + 600000 - Date.now()) / 1000)) + " seconds left on the cooldown");
+      console.log("nopers im not restarting yet");
+    }
   }
 }
 
@@ -118,7 +139,34 @@ function chance(outOf)
   }
 }
 
+dcClient.on.ready = function ()
+{
+  console.log("Client online");
+};
 
+dcClient.on.message_create = function (message) 
+{
+  console.log(message.content);
+  if (message.channel_id === "967134443393400922" && message.author.username === "PogpegaBot") 
+  {
+    dcClient.send(
+      "967134443393400922", // Channel to send in
+      {
+        content: message.content, // Content of the message to send (Optional when sending stickers) (Default null)
+        embeds: [], // Embeds to send with your message (Not optional, must be an array, can be unset for default) (Default empty array)
+        allowed_mentions: {
+          // Allow mentions settings (Not optional, but can be unset for default) (Default all true mentions object)
+          allowUsers: true, // Allow message to ping user (Default true)
+          allowRoles: true, // Allow message to ping roles (Default true)
+          allowEveryone: true, // Allow message to ping @everyone and @here (Default true)
+          allowRepliedUser: true, // If the message is a reply, ping the user you are replying to (Default true)
+        },
+        components: [], // Message components (Not optional, must be an array, can be unset for default) (Default empty array)
+        stickers: [], // Stickers to go with your message (Not optional, must be an array, can be unset for default) (Default empty array)
+      }
+    );
+  }
+}
 
 function sleep(miliseconds)
 {
