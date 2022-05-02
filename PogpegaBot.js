@@ -648,7 +648,8 @@ function onMessageHandler(target, context, msg, self)
       console.log(`* we boolin`);
     }
     else if (commandName.startsWith(">emit")) {
-      io.emit("test", "does this work")
+      //io.emit("test", "does this work")
+      client.say(target, "/me Pogpega Chatting you found an easter egg, good job. This command doesnt actually do anything");
     }
     else if (commandName.startsWith(">code")) 
     {
@@ -725,12 +726,12 @@ function onMessageHandler(target, context, msg, self)
       client.say(target, "/me Pogpega PINGED");
       console.log(`* PINGED`);
     }
-    else if (commandName.startsWith(">rs ") || commandName.startsWith(">c ") || commandName.startsWith(">sc ") || commandName.startsWith(">osutop "))
+    else if (commandName.startsWith(">rs ") || commandName.startsWith(">c ") || commandName.startsWith(">sc ") || commandName.startsWith(">osutop ") || commandName.startsWith(">osu ") || commandName.startsWith(">mania "))
     {
       discordTarget = target;
       dcClient.channels.cache.get("967134443393400922").send(commandName);
     }
-    else if (commandName === ">rs" || commandName === ">c" || commandName === ">sc" || commandName === ">osutop") 
+    else if (commandName === ">rs" || commandName === ">c" || commandName === ">sc" || commandName === ">osutop" || commandName === ">osu" || commandName === ">mania") 
     {
       if (osuUsernames.has(context.username)) 
       {
@@ -941,7 +942,11 @@ function onMessageHandler(target, context, msg, self)
         guessing = true;
         console.log(`* Scrambled word (` + commandList[guessIndex] + `)`);
       }
-    }
+    } 
+    /*else if (commandName.startsWith(">restart") && (context.username === "thatoneguywhospamspogpega" || context.username === "nekopavel" || context.username === "dimine0704")) 
+    {
+      throw new Error("INITIATE_SELF_DESTRUCT");
+    }*/
     else if (commandName.startsWith(">badtranslate ")) 
     {
       commandName = commandName.substring(14);
@@ -972,59 +977,67 @@ function onMessageHandler(target, context, msg, self)
     }
     else if (commandName.startsWith(">generate ")) 
     {
-      commandName = commandName.substring(10);
-      var contains = false;
-      for (const text of blacklist.blacklist) 
+      if (checkFollow(context.userID)) 
       {
-        if (commandName.toLowerCase().includes(text)) 
+        commandName = commandName.substring(10);
+        var contains = false;
+        for (const text of blacklist.blacklist) 
         {
-          contains = true;
+          if (commandName.toLowerCase().includes(text)) 
+          {
+            contains = true;
+          }
         }
-      }
-      if (contains) 
-      {
-        client.say(target, "/me Pogpega Tssk @" + context.username + " that contains blacklisted words");
+        if (contains) 
+        {
+          client.say(target, "/me Pogpega Tssk @" + context.username + " that contains blacklisted words");
+        }
+        else 
+        {
+          client.say(target, "/me Pogpega Generating text TriFi");
+          try 
+          {
+            (async function () 
+            {
+              var resp = await deepai.callStandardApi("text-generator", {
+                text: commandName,
+              }).catch((errorus) => console.log(errorus.message));
+              contains = false;
+              var tempString = "";
+              tempString = tempString.concat(resp.output);
+              for (const text of blacklist.blacklist) 
+              {
+                if (tempString.includes(text)) 
+                {
+                  contains = true;
+                }
+              }
+              if (contains) 
+              {
+                client.say(target, '/me Pogpega OuttaPocket Tssk you almost made me say blacklisted words');
+              }
+              else 
+              {
+                var tempOut = resp.output;
+                if (tempOut.length > 500)
+                {
+                  tempOut = tempOut.substring(0, 450);
+                }
+                console.log(tempOut);
+                client.say(target, `/me Pogpega Chatting ` + tempOut);
+              }
+            })()
+          }
+          catch (err) 
+          {
+            client.say(target, "/me Pogpega Chatting error: " + err);
+          }
+        }
       }
       else 
       {
-        client.say(target, "/me Pogpega Generating text TriFi");
-        try 
-        {
-          (async function () 
-          {
-            var resp = await deepai.callStandardApi("text-generator", {
-              text: commandName,
-            }).catch((errorus) => console.log(errorus.message));
-            contains = false;
-            var tempString = "";
-            tempString = tempString.concat(resp.output);
-            for (const text of blacklist.blacklist) 
-            {
-              if (tempString.includes(text)) 
-              {
-                contains = true;
-              }
-            }
-            if (contains) 
-            {
-              client.say(target, '/me Pogpega OuttaPocket Tssk you almost made me say blacklisted words');
-            }
-            else 
-            {
-              var tempOut = resp.output;
-              if (tempOut.length > 500)
-              {
-                tempOut = tempOut.substring(0, 450);
-              }
-              console.log(tempOut);
-              client.say(target, `/me Pogpega Chatting ` + tempOut);
-            }
-          })()
-        }
-        catch (err) 
-        {
-          client.say(target, "/me Pogpega Chatting error: " + err);
-        }
+        client.action(target, "Pogpega Tssk @" + context['display-name'] + " This command requires you to be following the Pogpega MaN (the api actually costs real money so I don't want it spammed)");
+        console.log("Tssk no >generate for non-followers");
       }
     }
     else if (commandName === ">status")
@@ -1185,7 +1198,13 @@ function onMessageHandler(target, context, msg, self)
   }
   catch (errororor)
   {
-    client.say(target, "/me Pogpega Chatting Error: " + errororor.message);
+    /*if (errororor.message === "INITIATE_SELF_DESTRUCT") {
+      throw new Error("SELF_DESTRUCT_INITIATED");
+    } 
+    else 
+    {*/
+      client.say(target, "/me Pogpega Chatting Error: " + errororor.message);
+    //}
   }
 }
 

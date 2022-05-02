@@ -24,6 +24,7 @@
     "node-fetch": "^2.6.7",
     "node-notifier": "^10.0.1",
     "node.js": "^0.0.1-security",
+    "nodemon": "^2.0.16",
     "onoff": "^6.0.3",
     "pi-gpio": "^0.0.8",
     "pigpio": "^3.3.1",

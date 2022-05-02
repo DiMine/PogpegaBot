@@ -5,11 +5,12 @@ var offline = false;
 const Http = new XMLHttpRequest();
 require('dotenv').config();
 var { exec, spawn } = require('child_process');
-var pogpegaBot;
+//const fs = require('fs');
+//var pogpegaBot;
 const Discord = require('discord-user-bots');
 var dcClient = new Discord.Client(process.env.DISCORD_ALT_TOKEN);
 //var osupingBot = exec('osupingbot.js');
-var lastTime = 0;
+var lastTime = Date.now();
 // Ping an api to see if BTMC is live
 function ping() 
 {
@@ -109,18 +110,20 @@ function onMessageHandler(target, context, msg, self)
     console.log("Started PogpegaBot");
   }*/ else if (commandName.startsWith(">shock")) 
   {
-    if (lastTime + 600000 < Date.now()) 
+    if (lastTime + 300000 < Date.now()) 
     {
       client.say(target, "/me Pogpega Looks like the >rs function isnt working. Lets fix that with a controlled shock MEGALUL Stab MrDestructoid");
-      dcClient = "";
-      dcClient = new Discord.Client(process.env.DISCORD_ALT_TOKEN);
+      throw new Error("Chatting");
+      //Program.restart();
+      //dcClient = "";
+      //dcClient = new Discord.Client(process.env.DISCORD_ALT_TOKEN);
       /*osupingBot = exec('osupingbot.js');*/
-      console.log("Restarted osupingbot");
-      lastTime = Date.now();
+      //console.log("Restarted osupingbot");
+      //lastTime = Date.now();
     }
     else 
     {
-      client.say(target, "/me Pogpega Tssk theres still " + Math.ceil(((lastTime + 600000 - Date.now()) / 1000)) + " seconds left on the cooldown");
+      client.say(target, "/me Pogpega Tssk theres still " + Math.ceil(((lastTime + 300000 - Date.now()) / 1000)) + " seconds left on the cooldown");
       console.log("nopers im not restarting yet");
     }
   }
@@ -143,7 +146,10 @@ dcClient.on.ready = function ()
 {
   console.log("Client online");
 };
-
+/*dcClient.on.discord_disconnect() = function ()
+{
+  Program.restart();
+}*/
 dcClient.on.message_create = function (message) 
 {
   console.log(message.content);
