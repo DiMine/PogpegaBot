@@ -2,6 +2,7 @@ const { Console } = require('console');
 const tmi = require('tmi.js');
 var XMLHttpRequest = require('xhr2');
 var offline = false;
+var broken = false;
 const Http = new XMLHttpRequest();
 require('dotenv').config();
 var { exec, spawn } = require('child_process');
@@ -71,6 +72,8 @@ function onMessageHandler(target, context, msg, self)
   if (self) { return; } // Ignore messages from the bot
   ping(); // Check to see if ed is online
 
+  if (context.username == 'thatonebotwhospamspogpega') broken = false;
+
   // Remove whitespace from message
   var commandName = msg.trim();
 
@@ -126,6 +129,16 @@ function onMessageHandler(target, context, msg, self)
       client.say(target, "/me Pogpega Tssk theres still " + Math.ceil(((lastTime + 300000 - Date.now()) / 1000)) + " seconds left on the cooldown");
       console.log("nopers im not restarting yet");
     }
+  }
+  else if (commandName.startsWith(">rs")) 
+  {
+    broken = true;
+    setTimeout(() => {
+      if (broken) 
+      {
+        client.action(target, "Pogpega @" + context['display-name'] + " is >rs not working? Try typing >shock to restart its function");
+      }
+    }, 7000);
   }
 }
 
