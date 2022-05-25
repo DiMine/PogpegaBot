@@ -5,7 +5,7 @@ var offline = false;
 var broken = false;
 const Http = new XMLHttpRequest();
 require('dotenv').config();
-var { exec, spawn } = require('child_process');
+//var { exec, spawn } = require('child_process');
 //const fs = require('fs');
 //var pogpegaBot;
 const Discord = require('discord-user-bots');
@@ -52,7 +52,8 @@ const opts = {
     'ThatOneBotWhoPingsPogpega',
     'btmc',
     'nekochattingbot',
-    'nekopavel'
+    'nekopavel',
+    'dimine0704'
   ]
 };
 
@@ -78,29 +79,14 @@ function onMessageHandler(target, context, msg, self)
   var commandName = msg.trim();
 
   // Remove starting pogpegas from messages so i can use the bot
-  if (commandName.startsWith('Pogpega IceCold ') | commandName.startsWith('Pogpega SoSnowy')) 
-  {
-    commandName = commandName.slice(16);
-  }
-  else if (commandName.startsWith('Pogpega  IceCold ')) 
-  {
-    commandName = commandName.slice(17);
-  }
-  else if (commandName.startsWith('Pogpega ')) 
-  {
-    commandName = commandName.slice(8);
-  }
+  if (commandName.startsWith('Pogpega IceCold ') | commandName.startsWith('Pogpega SoSnowy')) commandName = commandName.slice(16);
+  else if (commandName.startsWith('Pogpega  IceCold ')) commandName = commandName.slice(17);
+  else if (commandName.startsWith('Pogpega ')) commandName = commandName.slice(8);
   /*if (commandName.startsWith('Chatting ')) {
     commandName = commandName.slice(9);
   }*/
 
-  if (!offline)
-  {
-    if (target === "#btmc") 
-    {
-      target = "#thatonebotwhospamspogpega";
-    }
-  }
+  if (!offline && target === "#btmc") target = "#thatonebotwhospamspogpega";
   if (/*context.username === 'streamelements' && */commandName.startsWith('Use code') && chance(15)) 
   {
     client.say(target, '/me Pogpega 👆 Turn it off and on again !!! ');
@@ -134,35 +120,22 @@ function onMessageHandler(target, context, msg, self)
   {
     broken = true;
     setTimeout(() => {
-      if (broken) 
-      {
-        client.action(target, "Pogpega @" + context['display-name'] + " is >rs not working? Try typing >shock to restart its function");
-      }
-    }, 7000);
+      if (broken) client.action(target, "Pogpega @" + context['display-name'] + " is >rs not working? Try typing >shock to restart its function");
+    }, 30000);
   }
 }
 
 function chance(outOf) 
 {
   var result = Math.floor(Math.random() * outOf);
-  if (result === 1) 
-  {
-    return true;
-  }
-  else 
-  {
-    return false;
-  }
+  if (result === 1) return true;
+  else return false;
 }
 
 dcClient.on.ready = function ()
 {
   console.log("Client online");
 };
-/*dcClient.on.discord_disconnect() = function ()
-{
-  Program.restart();
-}*/
 dcClient.on.message_create = function (message) 
 {
   console.log(message.content);
@@ -187,6 +160,12 @@ dcClient.on.message_create = function (message)
   }
 }
 
+dcClient.on.discord_disconnect = function () 
+{
+  client.action('#thatonebotwhospamspogpega', "Botpega API disconnected, auto-restarting script");
+  throw new Error("Chatting");
+}
+
 function sleep(miliseconds)
 {
   var currentTime = new Date().getTime();
@@ -200,4 +179,5 @@ function sleep(miliseconds)
 function onConnectedHandler(addr, port)
 {
   console.log(`* Connected to ${addr}:${port}`);
+  client.action('#thatonebotwhospamspogpega', "Botpega Starting StarterBot TriFi");
 }

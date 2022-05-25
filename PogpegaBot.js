@@ -3,9 +3,12 @@ const { google } = require('googleapis');
 var XMLHttpRequest = require('xhr2');
 var { PythonShell } = require('python-shell');
 const LED = require('onoff').Gpio;
-const { Server } = require("socket.io");
-const io = new Server(7270);
+//const { Server } = require("socket.io");
+//const io = new Server(7270);
 const { Client, Intents } = require('discord.js');
+const sqlite3 = require('sqlite3').verbose();
+const copypastas = new sqlite3.Database('CopypastaLibrary.sqlite3');
+var similarity = require('string-similarity');
 const dcClient = new Client({
   intents: [
     Intents.FLAGS.GUILDS,
@@ -38,25 +41,25 @@ const fetch = require('sync-fetch');
 var count;
 fs.readFile('count.json', (err, data) =>
 {
-  if (err) throw err;
-  count = new Map(Object.entries(JSON.parse(data)));
+  if (err) console.error(err);
+  else count = new Map(Object.entries(JSON.parse(data)));
 });
 var osuUsernames;
 fs.readFile('osuUsernames.json', (err, data) =>
 {
-  if (err) throw err;
-  osuUsernames = new Map(Object.entries(JSON.parse(data)));
+  if (err) console.error(err);
+  else osuUsernames = new Map(Object.entries(JSON.parse(data)));
 });
 var emojiDatabase;
 fs.readFile('emojiMapping.json', (err, data) =>
 {
-  if (err) throw err;
-  emojiDatabase = JSON.parse(data);
+  if (err) console.error(err);
+  else emojiDatabase = JSON.parse(data);
 });
 fs.readFile('fitbit.json', (err, data) =>
 {
-  if (err) throw err;
-  fitbitTokens = JSON.parse(data);
+  if (err) console.error(err);
+  else fitbitTokens = JSON.parse(data);
 });
 require('dotenv').config();
 refreshDate();
@@ -70,9 +73,11 @@ var cbotCooldown = 0;
 var blacklist
 fs.readFile('blacklist.json', (err, data) =>
 {
-  if (err) throw err;
-  blacklist = JSON.parse(data);
+  if (err) console.error(err);
+  else blacklist = JSON.parse(data);
 });
+
+copypastas.run("CREATE TABLE IF NOT EXISTS copypastas (pasta)");
 
 // Declare variables and stuff for the LEDs
 const ledLive = new LED(17, 'out');
@@ -91,8 +96,8 @@ function saveCounter() // Save the pogpega count of users to a .json file
   var data = JSON.stringify(Object.fromEntries(count))
   fs.writeFile("count.json", data, (err) =>
   {
-    if (err) throw err;
-    console.log(`* Saved`);
+    if (err) console.error(err);
+    else console.log(`* Saved`);
   });
 }
 function saveUsernames() // Save the osu username database
@@ -101,8 +106,8 @@ function saveUsernames() // Save the osu username database
   var data = JSON.stringify(Object.fromEntries(osuUsernames))
   fs.writeFile("osuUsernames.json", data, (err) =>
   {
-    if (err) throw err;
-    console.log(`* Saved osu usernames`);
+    if (err) console.error(err);
+    else console.log(`* Saved osu usernames`);
   });
 }
 const commandList = [">led", ">pogpegafarm", ">deceit", "!prefix", "Use code", "!bored", "Get 20% off Manscaped with code", "Pogpega /", ">maxfarm", "!pull", "!skin", ">repeat", "!roll", ">online", "!cock", ">cock", ">rice", "!rice", ">ping", "!math 9+10" + "!rea" + ">pogpegas", ">give", ">generate", ">translate", ">chat", ">homies"];
@@ -144,10 +149,7 @@ function ping()
 
 function checkFollow(userID)
 {
-  if (userID === '726306594') 
-  {
-    return true;
-  }
+  if (userID === '726306594') return true;
   var following = fetch("https://api.twitch.tv/helix/users/follows?to_id=726306594&from_id=" + userID + "&?" + Date.now(), {
     headers: {
       Authorization: process.env.TWITCH_TOKEN,
@@ -156,14 +158,8 @@ function checkFollow(userID)
     method: "GET"
   }).json();
   console.log("Checked follower status");
-  if (following.total === 1) 
-  {
-    return true;
-  }
-  else 
-  {
-    return false;
-  }
+  if (following.total === 1) return true;
+  else return false;
 }
 
 const deepai = require('deepai');
@@ -194,7 +190,7 @@ const opts = {
     'NekoPavel',
     'NekoChattingBot',
     'DiMine0704',
-    'DiMineosu'
+    'Styx_E_Clap'
   ]
 };
 
@@ -214,6 +210,10 @@ dcClient.on('messageCreate', (message) =>
     if (message.content.includes(" no recent plays in") || message.content.includes("no scores on the map")) 
     {
       client.action(discordTarget, "Pogpega Chatting " + message.content.substring(2, message.content.length - 2).replace(/`/g, ''));
+    }
+    else if (message.content.includes("**Error, please try again later.**")) 
+    {
+      client.action(discordTarget, "Pogpega Chatting the owobot is down");
     }
     else 
     {
@@ -307,18 +307,9 @@ function onMessageHandler(target, context, msg, self)
     }
 
     // Remove starting pogpegas from messages so i can use the bot
-    if (commandName.startsWith('Pogpega IceCold ') | commandName.startsWith('Pogpega SoSnowy')) 
-    {
-      commandName = commandName.slice(16);
-    }
-    else if (commandName.startsWith('Pogpega  IceCold ')) 
-    {
-      commandName = commandName.slice(17);
-    }
-    else if (commandName.startsWith('Pogpega ')) 
-    {
-      commandName = commandName.slice(8);
-    }
+    if (commandName.startsWith('Pogpega IceCold ') | commandName.startsWith('Pogpega SoSnowy')) commandName = commandName.slice(16);
+    else if (commandName.startsWith('Pogpega  IceCold ')) commandName = commandName.slice(17);
+    else if (commandName.startsWith('Pogpega ')) commandName = commandName.slice(8);
     /*if (commandName.startsWith('Chatting ')) {
       commandName = commandName.slice(9);
     }*/
@@ -343,8 +334,6 @@ function onMessageHandler(target, context, msg, self)
       }
     }
 
-
-
     if (commandName.startsWith(">")) // If the message is a command
     {
       if (commandName.toLowerCase().startsWith(">badtranslate ")) // Puts the message through a translator a bunch of times and back to english
@@ -356,17 +345,20 @@ function onMessageHandler(target, context, msg, self)
       }
       else if (commandName.toLowerCase() === ">cam" || commandName.toLowerCase() === ">camera") 
       {
-        client.action(target, "Pogpega @" + context['display-name'] + " The camera for the led and servo can be found at pogpe.ga/camera");
+        //client.action(target, "Pogpega @" + context['display-name'] + " The camera for the led and servo is at pogpe.ga/camera");
+        client.action(target, "Pogpega @" + context['display-name'] + " Instructions to see the camera are at pogpe.ga/rtsp (can't keep the twitch stream on 24/7)");
       }
       else if (commandName.toLowerCase().startsWith(">cam @"))
       {
         commandName = commandName.substring(5);
-        client.action(target, "Pogpega @" + commandName + " The camera for the led and servo can be found at pogpe.ga/camera");
+        //client.action(target, "Pogpega @" + commandName + " The camera for the led and servo can be found at pogpe.ga/camera");
+        client.action(target, "Pogpega @" + commandName + " Instructions to see the camera are at pogpe.ga/rtsp (can't keep the twitch stream on 24/7)");
       }
       else if (commandName.toLowerCase().startsWith(">camera @"))
       {
         commandName = commandName.substring(8);
-        client.action(target, "Pogpega @" + commandName + " The camera for the led and servo can be found at pogpe.ga/camera");
+        //client.action(target, "Pogpega @" + commandName + " The camera for the led and servo can be found at pogpe.ga/camera");
+        client.action(target, "Pogpega @" + commandName + " Instructions to see the camera are at pogpe.ga/rtsp (can't keep the twitch stream on 24/7)");
       }
       else if (commandName.toLowerCase().startsWith(">cbot ")) // Sends a message to cleverbot
       {
@@ -480,15 +472,9 @@ function onMessageHandler(target, context, msg, self)
           var contains = false;
           for (const text of blacklist.blacklist) 
           {
-            if (commandName.toLowerCase().includes(text)) 
-            {
-              contains = true;
-            }
+            if (commandName.toLowerCase().includes(text)) contains = true;
           }
-          if (contains) 
-          {
-            client.action(target, "Pogpega Tssk @" + context['display-name'] + " that contains blacklisted words");
-          }
+          if (contains) client.action(target, "Pogpega Tssk @" + context['display-name'] + " that contains blacklisted words");
           else 
           {
             client.action(target, "Pogpega Generating text TriFi");
@@ -724,6 +710,11 @@ function onMessageHandler(target, context, msg, self)
               ledRgbControl(0, 0, 0);
               statusRGB = "⬜";
               break;
+            case "on":
+              ledRgbControl(0, 0, 0);
+              statusRGB = "⬜";
+              color = "white";
+              break;
             case "yellow":
               ledRgbControl(0, 0, 1);
               statusRGB = "🟨";
@@ -786,6 +777,60 @@ function onMessageHandler(target, context, msg, self)
       else if (commandName.toLowerCase() === '>online') // Check if BTMC is online
       {
         client.say(target, "/me Pogpega Chatting if you can see this message, ed is offline");
+      }
+      else if (commandName.toLowerCase().startsWith('>pasta')) 
+      {
+        try 
+        {
+          commandName = commandName.substring(7);
+        } 
+        catch (outOfBounds) 
+        {
+          client.action(target, "Pogpega This is the copypasta library. insert more info here Chatting");
+        }
+        if (commandName.toLowerCase().startsWith("new ")) 
+        {
+          commandName = commandName.substring(4);
+          var alreadyIn = false;
+          copypastas.each("SELECT * FROM copypastas", (errr, row) => {
+            if (errr) console.error(errr);
+            if (similarity.compareTwoStrings(commandName, row.pasta) >= 0.7) alreadyIn = true;
+          }, (errr, rows) => {
+            if (errr) console.error(errr);
+            if (!alreadyIn) 
+            {
+              copypastas.run('INSERT INTO copypastas (pasta) VALUES ("' + commandName + '")');
+              client.action(target, "Pogpega " + context['display-name'] + " Added copypasta to the library");
+            }
+            else client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is already in the library");
+          });
+        }
+        else if (commandName.toLowerCase().startsWith("print")) 
+        {
+          copypastas.each("SELECT * FROM copypastas", (errr, row) => {
+            if (errr) console.error(errr);
+            //console.log(row.pasta);
+            client.action(target, "Pogpega " + row.pasta);
+          });
+        }
+        else if (commandName.toLowerCase().startsWith("random")) 
+        {
+          copypastas.get('SELECT * FROM copypastas ORDER BY RANDOM() LIMIT 1', (errr, row) => {
+            if (errr) console.error(errr);
+            //console.log(row.pasta);
+            client.action(target, "Pogpega " + row.pasta);
+          });
+        }
+        else if (commandName.toLowerCase().startsWith("search ")) {
+          commandName = commandName.substring(7);
+          copypastas.all("SELECT * FROM copypastas", (errr, rows) => {
+            if (errr) console.error(errr);
+            var pastaResult = "";
+            pastaResult = similarity.findBestMatch(commandName, rows.map(a => a.pasta));
+            console.log(pastaResult.bestMatch);
+            client.action(target, "Pogpega " + pastaResult.bestMatch.target);
+          });
+        }
       }
       if (commandName.toLowerCase().startsWith(">ping")) // See if the >ping command is used and turn on the red led
       {
@@ -937,7 +982,7 @@ function onMessageHandler(target, context, msg, self)
         }
         else if (commandName.toLowerCase() === "seizure") // Make the servo have a seizure
         {
-          client.action("Pogpega Giving the servo a seizure ppCrazy");
+          client.action(target, "Pogpega Giving the servo a seizure ppCrazy");
           console.log("Giving servo a seizure");
           const servoDelay = 175;
           motor.servoWrite(500);
@@ -980,13 +1025,29 @@ function onMessageHandler(target, context, msg, self)
             }
             else
             {
-              client.say(target, "/me Pogpega Tssk number has to be from 500-2500");
+              client.action(target, "Pogpega Tssk number has to be from 500-2500");
             }
           }
           catch (erroneous)
           {
-            client.say(target, "/me Pogpega Chatting Error: " + erroneous.message);
+            client.action(target, "Pogpega Chatting Error: " + erroneous.message);
           }
+        }
+      }
+      else if (commandName.toLowerCase().startsWith(">similarity ")) 
+      {
+        commandName = commandName.substring(12);
+        try 
+        {
+        commandName = commandName.match(/(?<=(["']\b))(?:(?=(\\?))\2.)*?(?=\1)/g);
+        console.log(commandName);
+        var similarScore = similarity.compareTwoStrings(commandName[0], commandName[1]);
+        client.action(target, "Pogpega @" + context['display-name'] + " Similarity: " + similarScore);
+        } 
+        catch (errr) 
+        {
+          console.error(errr);
+          client.action(target, "Pogpega @" + context['display-name'] + " Chatting something went wrong, probably invalid syntax (did you put the stuff in quotes?)");
         }
       }
       else if (commandName.toLowerCase() === ">status") // Get a status that I can set
@@ -1019,18 +1080,13 @@ function onMessageHandler(target, context, msg, self)
         try
         {
           commandName = translator(lang, commandName);
-          if (commandName != undefined)
-          {
-            client.say(target, "/me Pogpega " + commandName);
-          }
-          else
-          {
-            client.say(target, "/me Pogpega Chatting Enter a valid language");
-          }
+          if (commandName != undefined) client.say(target, "/me Pogpega " + commandName);
+          else client.say(target, "/me Pogpega Chatting Enter a valid language");
         }
         catch (err)
         {
           client.say(target, "/me Pogpega Chatting " + err.message);
+          console.error(err);
         }
       }
       else if (commandName.toLowerCase() === ">wordle") // Play wordle
@@ -1042,11 +1098,11 @@ function onMessageHandler(target, context, msg, self)
           guessCounter = 0;
           resetLetters();
           correctPogu = false;
-          client.say(target, "/me Pogpega wordle has started, use >guess to guess a 5 letter word");
+          client.action(target, "Pogpega wordle has started, use >guess to guess a 5 letter word");
         }
         else
         {
-          client.say(target, "/me Pogpega there is already a wordle active");
+          client.action(target, "Pogpega there is already a wordle active");
         }
       }
       else if (commandName.toLowerCase() === ">wordle stop" && context.username === "thatoneguywhospamspogpega") // Stop the currently active wordle
@@ -1195,41 +1251,17 @@ function onMessageHandler(target, context, msg, self)
     // Random Chance
     if (offline)
     {
-      if (chance(20))
-      {
-        saveCounter();
-      }
-      if (chance(200))
-      {
-        refreshDate();
-      }
-      if (chance(50))
-      {
-        updateFitbit();
-      }
-      if (chance(200))
-      {
-        refreshFitbit();
-      }
+      if (chance(40))   saveCounter();
+      if (chance(1000))  refreshDate();
+      if (chance(100))   updateFitbit();
+      if (chance(300))  refreshFitbit();
     }
     else
     {
-      if (chance(200))
-      {
-        saveCounter();
-      }
-      if (chance(1000))
-      {
-        refreshDate();
-      }
-      if (chance(250))
-      {
-        updateFitbit();
-      }
-      if (chance(500))
-      {
-        refreshFitbit();
-      }
+      if (chance(500))   saveCounter();
+      if (chance(5000))  refreshDate();
+      if (chance(1000))  updateFitbit();
+      if (chance(5000))  refreshFitbit();
     }
   }
   catch (errororor)
@@ -1247,26 +1279,14 @@ function onMessageHandler(target, context, msg, self)
 function chance(outOf) // Return true 1/x times, where x is the input
 {
   var result = Math.floor(Math.random() * outOf);
-  if (result === 1) 
-  {
-    return true;
-  }
-  else 
-  {
-    return false;
-  }
+  if (result === 1) return true;
+  else return false;
 }
 
 function addPogpegas(user, amount) 
 {
-  if (count.has(user)) // Check if the person is already in the database
-  {
-    count.set(user, count.get(user) + amount); // Add new pogpegas to the user
-  }
-  else // If the person is not in the database
-  {
-    count.set(user, amount); // Add them to it
-  }
+  if (count.has(user)) count.set(user, count.get(user) + amount); 
+  else count.set(user, amount);
 }
 
 function ledRgbControl(r, g, b) 
@@ -1309,10 +1329,10 @@ function refreshFitbit() // Update my fitbit refresh/access token
   var data = JSON.stringify(token);
   fs.writeFile("fitbit.json", data, (err) =>
   {
-    if (err) throw err;
+    if (err) console.error(err);
+    else console.log(`Refreshed Fitbit token`);
   });
   fitbitTokens = token;
-  console.log(`Refreshed Fitbit token`);
 }
 
 function shuffle(string) // Shuffle the letters in a string
@@ -1404,10 +1424,7 @@ function checkToxic(target, user, sentence) // Send a message to the Perspective
           client.say(target, "/me Pogpega Chatting invalid message (the bot thinks its not in english) @" + user);
         }
       });
-  }).catch(err =>
-  {
-    console.log(err.message);
-  });
+  }).catch(err => {console.log(err.message);});
 }
 
 function resetLetters() // Reset the letter array for wordle
@@ -1623,15 +1640,10 @@ function cutDown(text) // Cut down a message length to make sure it can be sent 
   try
   {
     var temp = text
-    if (temp.length > 250) 
-    {
-      temp = temp.substring(0, 248);
-    }
+    if (temp.length > 250) temp = temp.substring(0, 248);
     return temp;
-  } catch (err)
-  {
-    console.error(err);
-  }
+  } 
+  catch (err) {console.error(err);}
 }
 function translator(traget, text) // Translate text into the specified language
 {
@@ -1671,10 +1683,7 @@ function parseWordle(resp) // Parse the response from the wordle api to turn it 
         break;
     }
   }
-  if (result === "🟩🟩🟩🟩🟩")
-  {
-    correctPogu = true;
-  }
+  if (result === "🟩🟩🟩🟩🟩") correctPogu = true;
   return result;
 }
 
@@ -1684,13 +1693,8 @@ function parseLetters() // Parse the letters from the letter array to list which
   var result2 = "";
   letters.forEach((letter, index) =>
   {
-    if (letter === 1)
-    {
-      result = result.concat(n2l(index));
-    } else if (letter === 2)
-    {
-      result2 = result2.concat(n2l(index));
-    }
+    if (letter === 1) result = result.concat(n2l(index));
+    else if (letter === 2) result2 = result2.concat(n2l(index));
   })
   return result + ", " + result2;
 }
@@ -1698,17 +1702,14 @@ function parseLetters() // Parse the letters from the letter array to list which
 function sleep(miliseconds) // Do nothing for an amount of time
 {
   var currentTime = new Date().getTime();
-  while (currentTime + miliseconds >= new Date().getTime())
-  {
-    // Do absolutely nothing
-  }
+  while (currentTime + miliseconds >= new Date().getTime()) {}
 }
 
 function refreshDate() // Refresh the current date
 {
   today = new Date();
   var dd = String(today.getDate()).padStart(2, '0');
-  var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+  var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0
   var yyyy = today.getFullYear();
 
   today = yyyy + '-' + mm + '-' + dd;
@@ -1719,7 +1720,6 @@ function refreshDate() // Refresh the current date
 function onConnectedHandler(addr, port)
 {
   console.log(`* Connected to ${addr}:${port}`);
-  refreshFitbit();
   updateFitbit();
 }
 
@@ -1728,10 +1728,7 @@ function minParse(totalMinutes) // Parse minutes into minutes and hours (for the
   const minutes = totalMinutes % 60;
   const hours = Math.floor(totalMinutes / 60);
   var timeSleep = timeParse(hours) + "h" + timeParse(minutes) + "m";
-  if (timeSleep.charAt(0) == '0')
-  {
-    timeSleep = timeSleep.substring(1);
-  }
+  if (timeSleep.charAt(0) == '0') timeSleep = timeSleep.substring(1);
   return timeSleep;
 }
 
