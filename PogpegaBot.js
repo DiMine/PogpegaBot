@@ -110,7 +110,7 @@ function saveUsernames() // Save the osu username database
     else console.log(`* Saved osu usernames`);
   });
 }
-const commandList = [">led", ">pogpegafarm", ">deceit", "!prefix", "Use code", "!bored", "Get 20% off Manscaped with code", "Pogpega /", ">maxfarm", "!pull", "!skin", ">repeat", "!roll", ">online", "!cock", ">cock", ">rice", "!rice", ">ping", "!math 9+10" + "!rea" + ">pogpegas", ">give", ">generate", ">translate", ">chat", ">homies"];
+const commandList = [">led", ">pogpegafarm", ">deceit", "!prefix", "Use code", "!bored", "Get 20% off Manscaped with code", "Pogpega /", ">maxfarm", "!pull", "!skin", ">repeat", "!roll", ">online", ">rice", "!rice", ">ping", "!math 9+10" + "!rea" + ">pogpegas", ">give", ">generate", ">translate", ">chat", ">homies"];
 var guessing = false;
 var guessIndex = 0;
 
@@ -393,11 +393,6 @@ function onMessageHandler(target, context, msg, self)
           client.action(target, "Pogpega " + results[0]);
           console.log(results[0]);
         });
-      }
-      else if (commandName === '>cock') //commandName === '!cock' || 
-      {
-        client.action(target, "Pogpega Chatting ed's cock is 72.7mm (2.86 inches)");
-        console.log(`* nice cock`);
       }
       else if (commandName.toLowerCase().startsWith(">code")) // Send the link to the pogpegabot github
       {
