@@ -122,11 +122,18 @@ var guessIndex = 0;
 // Ping an api to see if BTMC is live
 function ping() 
 {
-  var url = 'https://decapi.me/twitch/uptime/btmc?' + Date.now();
-  Http.open("GET", url);
-  Http.send();
-  if (Http.responseText.includes("offline")) 
+  var checkIfLive = fetch("https://api.twitch.tv/helix/streams?user_id=46708418" + "&?" + Date.now(), {
+    headers: {
+      Authorization: process.env.TWITCH_TOKEN,
+      "Client-Id": process.env.TWITCH_CLIENT_ID,
+    },
+    method: "GET"
+  }).json();
+  console.log(checkIfLive.data);
+  console.log(checkIfLive.data.length);
+  if (checkIfLive.data.length == 0) 
   {
+    console.log("test");
     if (offline === false) 
     {
       offline = true;
@@ -135,7 +142,7 @@ function ping()
       dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say BTMC is now offline");
     }
   }
-  else if (!Http.responseText.includes("offline")) 
+  else 
   {
     if (offline === true) 
     {
@@ -145,11 +152,26 @@ function ping()
       dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say BTMC is now online");
     }
   }
+  /*var url = 'https://decapi.me/twitch/uptime/btmc?' + Date.now();
+  Http.open("GET", url);
+  Http.send();
+  if (Http.responseText.includes("Too Many Requests")) 
+  {
+    dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say absolutely nothing :Chatting:");
+  }
+  else if (Http.responseText.includes("offline")) 
+  {
+   
+  }
+  else if (!Http.responseText.includes("offline")) 
+  {
+    
+  }*/
 }
 
 function checkFollow(userID)
 {
-  if (userID === '726306594') return true;
+  if (userID === '726306594') return true; // Returns true if I use the command myself
   var following = fetch("https://api.twitch.tv/helix/users/follows?to_id=726306594&from_id=" + userID + "&?" + Date.now(), {
     headers: {
       Authorization: process.env.TWITCH_TOKEN,
@@ -269,11 +291,13 @@ client.connect();
 function onMessageHandler(target, context, msg, self)
 {
   if (self) { return; } // Ignore messages from the bot
-  ping(); // Check to see if ed is online
+  if (offline) if (chance(20)) ping();
+  if (!offline) if (chance(100)) ping();
 
   if (startup)
   {
     startup = false;
+    ping();
     client.action("#thatonebotwhospamspogpega", "Pogpega Starting PogpegaBot TriFi");
   }
   // Remove whitespace from message
@@ -386,10 +410,7 @@ function onMessageHandler(target, context, msg, self)
         //chatterBot.send(commandName);
         PythonShell.run('ChatterBot.py', { pythonOptions: ['-u'], args: commandName }, function (err, results)
         {
-          if (err)
-          {
-            client.action(target, "Pogpega Chatting Error: " + err.message);
-          }
+          if (err) client.action(target, "Pogpega Chatting Error: " + err.message);
           client.action(target, "Pogpega " + results[0]);
           console.log(results[0]);
         });
@@ -778,7 +799,7 @@ function onMessageHandler(target, context, msg, self)
         try 
         {
           commandName = commandName.substring(7);
-        } 
+        }
         catch (outOfBounds) 
         {
           client.action(target, "Pogpega This is the copypasta library. insert more info here Chatting");
@@ -787,10 +808,12 @@ function onMessageHandler(target, context, msg, self)
         {
           commandName = commandName.substring(4);
           var alreadyIn = false;
-          copypastas.each("SELECT * FROM copypastas", (errr, row) => {
+          copypastas.each("SELECT * FROM copypastas", (errr, row) =>
+          {
             if (errr) console.error(errr);
             if (similarity.compareTwoStrings(commandName, row.pasta) >= 0.7) alreadyIn = true;
-          }, (errr, rows) => {
+          }, (errr, rows) =>
+          {
             if (errr) console.error(errr);
             if (!alreadyIn) 
             {
@@ -802,7 +825,8 @@ function onMessageHandler(target, context, msg, self)
         }
         else if (commandName.toLowerCase().startsWith("print")) 
         {
-          copypastas.each("SELECT * FROM copypastas", (errr, row) => {
+          copypastas.each("SELECT * FROM copypastas", (errr, row) =>
+          {
             if (errr) console.error(errr);
             //console.log(row.pasta);
             client.action(target, "Pogpega " + row.pasta);
@@ -810,15 +834,18 @@ function onMessageHandler(target, context, msg, self)
         }
         else if (commandName.toLowerCase().startsWith("random")) 
         {
-          copypastas.get('SELECT * FROM copypastas ORDER BY RANDOM() LIMIT 1', (errr, row) => {
+          copypastas.get('SELECT * FROM copypastas ORDER BY RANDOM() LIMIT 1', (errr, row) =>
+          {
             if (errr) console.error(errr);
             //console.log(row.pasta);
             client.action(target, "Pogpega " + row.pasta);
           });
         }
-        else if (commandName.toLowerCase().startsWith("search ")) {
+        else if (commandName.toLowerCase().startsWith("search "))
+        {
           commandName = commandName.substring(7);
-          copypastas.all("SELECT * FROM copypastas", (errr, rows) => {
+          copypastas.all("SELECT * FROM copypastas", (errr, rows) =>
+          {
             if (errr) console.error(errr);
             var pastaResult = "";
             pastaResult = similarity.findBestMatch(commandName, rows.map(a => a.pasta));
@@ -1034,11 +1061,11 @@ function onMessageHandler(target, context, msg, self)
         commandName = commandName.substring(12);
         try 
         {
-        commandName = commandName.match(/(?<=(["']\b))(?:(?=(\\?))\2.)*?(?=\1)/g);
-        console.log(commandName);
-        var similarScore = similarity.compareTwoStrings(commandName[0], commandName[1]);
-        client.action(target, "Pogpega @" + context['display-name'] + " Similarity: " + similarScore);
-        } 
+          commandName = commandName.match(/(?<=(["']\b))(?:(?=(\\?))\2.)*?(?=\1)/g);
+          console.log(commandName);
+          var similarScore = similarity.compareTwoStrings(commandName[0], commandName[1]);
+          client.action(target, "Pogpega @" + context['display-name'] + " Similarity: " + similarScore);
+        }
         catch (errr) 
         {
           console.error(errr);
@@ -1246,17 +1273,17 @@ function onMessageHandler(target, context, msg, self)
     // Random Chance
     if (offline)
     {
-      if (chance(40))   saveCounter();
-      if (chance(1000))  refreshDate();
-      if (chance(100))   updateFitbit();
-      if (chance(300))  refreshFitbit();
+      if (chance(40)) saveCounter();
+      if (chance(1000)) refreshDate();
+      if (chance(100)) updateFitbit();
+      if (chance(300)) refreshFitbit();
     }
     else
     {
-      if (chance(500))   saveCounter();
-      if (chance(5000))  refreshDate();
-      if (chance(1000))  updateFitbit();
-      if (chance(5000))  refreshFitbit();
+      if (chance(500)) saveCounter();
+      if (chance(5000)) refreshDate();
+      if (chance(1000)) updateFitbit();
+      if (chance(5000)) refreshFitbit();
     }
   }
   catch (errororor)
@@ -1280,7 +1307,7 @@ function chance(outOf) // Return true 1/x times, where x is the input
 
 function addPogpegas(user, amount) 
 {
-  if (count.has(user)) count.set(user, count.get(user) + amount); 
+  if (count.has(user)) count.set(user, count.get(user) + amount);
   else count.set(user, amount);
 }
 
@@ -1419,7 +1446,7 @@ function checkToxic(target, user, sentence) // Send a message to the Perspective
           client.say(target, "/me Pogpega Chatting invalid message (the bot thinks its not in english) @" + user);
         }
       });
-  }).catch(err => {console.log(err.message);});
+  }).catch(err => { console.log(err.message); });
 }
 
 function resetLetters() // Reset the letter array for wordle
@@ -1637,8 +1664,8 @@ function cutDown(text) // Cut down a message length to make sure it can be sent 
     var temp = text
     if (temp.length > 250) temp = temp.substring(0, 248);
     return temp;
-  } 
-  catch (err) {console.error(err);}
+  }
+  catch (err) { console.error(err); }
 }
 function translator(traget, text) // Translate text into the specified language
 {
@@ -1697,7 +1724,7 @@ function parseLetters() // Parse the letters from the letter array to list which
 function sleep(miliseconds) // Do nothing for an amount of time
 {
   var currentTime = new Date().getTime();
-  while (currentTime + miliseconds >= new Date().getTime()) {}
+  while (currentTime + miliseconds >= new Date().getTime()) { }
 }
 
 function refreshDate() // Refresh the current date
