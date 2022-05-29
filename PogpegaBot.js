@@ -129,11 +129,8 @@ function ping()
     },
     method: "GET"
   }).json();
-  console.log(checkIfLive.data);
-  console.log(checkIfLive.data.length);
   if (checkIfLive.data.length == 0) 
   {
-    console.log("test");
     if (offline === false) 
     {
       offline = true;
@@ -1449,6 +1446,7 @@ function checkToxic(target, user, sentence) // Send a message to the Perspective
   }).catch(err => { console.log(err.message); });
 }
 
+// Peak inefficient coding right here
 function resetLetters() // Reset the letter array for wordle
 {
   letters = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,];
