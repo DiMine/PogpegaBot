@@ -204,6 +204,7 @@ const opts = {
     'ThatOneGuyWhoSpamsPogpega',
     'ThatOneBotWhoSpamsPogpega',
     'ThatOneBotWhoPingsPogpega',
+    'pogpegabot',
     'btmc',
     'schip3s',
     'NekoPavel',
@@ -789,13 +790,14 @@ function onMessageHandler(target, context, msg, self)
       }
       else if (commandName.toLowerCase() === '>online') // Check if BTMC is online
       {
+        ping();
         client.say(target, "/me Pogpega Chatting if you can see this message, ed is offline");
       }
       else if (commandName.toLowerCase().startsWith('>pasta')) 
       {
         try 
         {
-          commandName = commandName.substring(7);
+          commandName = commandName.substring(7).replaceAll('"', "'");
         }
         catch (outOfBounds) 
         {
@@ -820,7 +822,7 @@ function onMessageHandler(target, context, msg, self)
             else client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is already in the library");
           });
         }
-        else if (commandName.toLowerCase().startsWith("print")) 
+        else if (commandName.toLowerCase().startsWith("print according to all known laws of aviation, there is no way a bee should be able to fly")) 
         {
           copypastas.each("SELECT * FROM copypastas", (errr, row) =>
           {
@@ -835,7 +837,9 @@ function onMessageHandler(target, context, msg, self)
           {
             if (errr) console.error(errr);
             //console.log(row.pasta);
-            client.action(target, "Pogpega " + row.pasta);
+            if (!row.pasta.includes("I have been informed that you requested that I kill myself. Sorry but I do not take assassination contracts on myself, it would be a conflict of interest and would be unprofessional. If our interests become mutual ")) {
+              client.action(target, "Pogpega " + row.pasta);
+            }
           });
         }
         else if (commandName.toLowerCase().startsWith("search "))
@@ -847,7 +851,11 @@ function onMessageHandler(target, context, msg, self)
             var pastaResult = "";
             pastaResult = similarity.findBestMatch(commandName, rows.map(a => a.pasta));
             console.log(pastaResult.bestMatch);
+            if (!pastaResult.bestMatch.target.includes("I have been informed that you requested that I kill myself. Sorry but I do not take assassination contracts on myself, it would be a conflict of interest and would be unprofessional. If our interests become mutual ")) {
             client.action(target, "Pogpega " + pastaResult.bestMatch.target);
+            } else {
+              client.action(target, "Pogpega Tssk you almost made me say that one copypasta thats not good WeirdChamp");
+            }
           });
         }
       }
@@ -956,7 +964,7 @@ function onMessageHandler(target, context, msg, self)
       else if (commandName.toLowerCase().startsWith('>remind ')) // Remind the user of something in a set amount of time
       {
         commandName = commandName.substring(8);
-        setTimeout(function () { client.say(target, "/me Pogpega @" + context['display-name'] + " " + commandName.substring(commandName.indexOf(" "))) }, parseInt(commandName) * 1000);
+        setTimeout(function () { if (offline) client.say(target, "/me Pogpega @" + context['display-name'] + " " + commandName.substring(commandName.indexOf(" "))) }, parseInt(commandName) * 1000);
       }
       else if (commandName.toLowerCase().startsWith('>repeat ')) // Make the bot repeat the message
       {
@@ -1128,6 +1136,12 @@ function onMessageHandler(target, context, msg, self)
       {
         wordleActive = false;
         client.say(target, "/me Pogpega wordle stopped");
+      }
+      else if (commandName.toLowerCase().startsWith(">wtfhesonlinewhyisthebotstillon") && context.username === 'thatoneguywhospamspogpega' || context.username === 'nekopavel') 
+      {
+        console.log("Oops");
+        ledLive.writeSync(1);
+        offline = false;
       }
       else if (commandName.toLowerCase().startsWith(">calories")) // Output the number of calories I've burned today
       {

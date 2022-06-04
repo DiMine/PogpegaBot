@@ -49,6 +49,7 @@ const opts = {
   channels: [
     'ThatOneGuyWhoSpamsPogpega',
     'ThatOneBotWhoSpamsPogpega',
+    'pogpegabot',
     'ThatOneBotWhoPingsPogpega',
     'btmc',
     'nekochattingbot',
@@ -73,7 +74,7 @@ function onMessageHandler(target, context, msg, self)
   if (self) { return; } // Ignore messages from the bot
   ping(); // Check to see if ed is online
 
-  if (context.username == 'thatonebotwhospamspogpega') broken = false;
+  if (context.username == 'thatonebotwhospamspogpega' || context.username == 'pogpegabot') broken = false;
 
   // Remove whitespace from message
   var commandName = msg.trim();
@@ -162,7 +163,7 @@ dcClient.on.message_create = function (message)
 
 dcClient.on.discord_disconnect = function () 
 {
-  client.action('#thatonebotwhospamspogpega', "Botpega API disconnected, auto-restarting script");
+  client.action('#pogpegabot', "Botpega API disconnected, auto-restarting script");
   throw new Error("Chatting");
 }
 
@@ -179,5 +180,5 @@ function sleep(miliseconds)
 function onConnectedHandler(addr, port)
 {
   console.log(`* Connected to ${addr}:${port}`);
-  client.action('#thatonebotwhospamspogpega', "Botpega Starting StarterBot TriFi");
+  client.action('#pogpegabot', "Botpega Starting StarterBot TriFi");
 }
