@@ -803,61 +803,64 @@ function onMessageHandler(target, context, msg, self)
         {
           client.action(target, "Pogpega This is the copypasta library. insert more info here Chatting");
         }
-        if (commandName.toLowerCase().startsWith("new ")) 
-        {
-          commandName = commandName.substring(4);
-          var alreadyIn = false;
-          copypastas.each("SELECT * FROM copypastas", (errr, row) =>
-          {
-            if (errr) console.error(errr);
-            if (similarity.compareTwoStrings(commandName, row.pasta) >= 0.7) alreadyIn = true;
-          }, (errr, rows) =>
-          {
-            if (errr) console.error(errr);
-            if (!alreadyIn) 
-            {
-              copypastas.run('INSERT INTO copypastas (pasta) VALUES ("' + commandName + '")');
-              client.action(target, "Pogpega " + context['display-name'] + " Added copypasta to the library");
-            }
-            else client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is already in the library");
-          });
-        }
-        else if (commandName.toLowerCase().startsWith("print according to all known laws of aviation, there is no way a bee should be able to fly")) 
-        {
-          copypastas.each("SELECT * FROM copypastas", (errr, row) =>
-          {
-            if (errr) console.error(errr);
-            //console.log(row.pasta);
-            client.action(target, "Pogpega " + row.pasta);
-          });
-        }
-        else if (commandName.toLowerCase().startsWith("random")) 
-        {
-          copypastas.get('SELECT * FROM copypastas ORDER BY RANDOM() LIMIT 1', (errr, row) =>
-          {
-            if (errr) console.error(errr);
-            //console.log(row.pasta);
-            if (!row.pasta.includes("I have been informed that you requested that I kill myself. Sorry but I do not take assassination contracts on myself, it would be a conflict of interest and would be unprofessional. If our interests become mutual ")) {
-              client.action(target, "Pogpega " + row.pasta);
-            }
-          });
-        }
-        else if (commandName.toLowerCase().startsWith("search "))
-        {
-          commandName = commandName.substring(7);
-          copypastas.all("SELECT * FROM copypastas", (errr, rows) =>
-          {
-            if (errr) console.error(errr);
-            var pastaResult = "";
-            pastaResult = similarity.findBestMatch(commandName, rows.map(a => a.pasta));
-            console.log(pastaResult.bestMatch);
-            if (!pastaResult.bestMatch.target.includes("I have been informed that you requested that I kill myself. Sorry but I do not take assassination contracts on myself, it would be a conflict of interest and would be unprofessional. If our interests become mutual ")) {
-            client.action(target, "Pogpega " + pastaResult.bestMatch.target);
-            } else {
-              client.action(target, "Pogpega Tssk you almost made me say that one copypasta thats not good WeirdChamp");
-            }
-          });
-        }
+          if (commandName.toLowerCase().startsWith("new ")) {
+              commandName = commandName.substring(4);
+              var alreadyIn = false;
+              copypastas.each("SELECT * FROM copypastas", (errr, row) => {
+                  if (errr) console.error(errr);
+                  if (similarity.compareTwoStrings(commandName, row.pasta) >= 0.7) alreadyIn = true;
+              }, (errr, rows) => {
+                  if (errr) console.error(errr);
+                  if (!alreadyIn) {
+                      copypastas.run('INSERT INTO copypastas (pasta) VALUES ("' + commandName + '")');
+                      client.action(target, "Pogpega " + context['display-name'] + " Added copypasta to the library");
+                  }
+                  else client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is already in the library");
+              });
+          }
+          else if (commandName.toLowerCase().startsWith("print according to all known laws of aviation, there is no way a bee should be able to fly")) {
+              copypastas.each("SELECT * FROM copypastas", (errr, row) => {
+                  if (errr) console.error(errr);
+                  //console.log(row.pasta);
+                  client.action(target, "Pogpega " + row.pasta);
+              });
+          }
+          else if (commandName.toLowerCase().startsWith("random")) {
+              copypastas.get('SELECT * FROM copypastas ORDER BY RANDOM() LIMIT 1', (errr, row) => {
+                  if (errr) console.error(errr);
+                  //console.log(row.pasta);
+                  if (!row.pasta.includes("I have been informed that you requested that I kill myself. Sorry but I do not take assassination contracts on myself, it would be a conflict of interest and would be unprofessional. If our interests become mutual ")) {
+                      client.action(target, "Pogpega " + row.pasta);
+                  }
+              });
+          }
+          else if (commandName.toLowerCase().startsWith("search ")) {
+              commandName = commandName.substring(7);
+              copypastas.all("SELECT * FROM copypastas", (errr, rows) => {
+                  if (errr) console.error(errr);
+                  var pastaResult = "";
+                  pastaResult = similarity.findBestMatch(commandName, rows.map(a => a.pasta));
+                  console.log(pastaResult.bestMatch);
+                  if (!pastaResult.bestMatch.target.includes("I have been informed that you requested that I kill myself. Sorry but I do not take assassination contracts on myself, it would be a conflict of interest and would be unprofessional. If our interests become mutual ")) {
+                      client.action(target, "Pogpega " + pastaResult.bestMatch.target);
+                  } else {
+                      client.action(target, "Pogpega Tssk you almost made me say that one copypasta thats not good WeirdChamp");
+                  }
+              });
+          }
+          else if (commandName.toLowerCase().startsWith("delete ")) {
+              commandName = commandName.substring(7);
+              copypastas.each("SELECT * FROM copypastas", (errr, row) => {
+                  if (errr) console.error(errr);
+                  if (similarity.compareTwoStrings(commandName, row.pasta) >= 0.7) {
+                      copypastas.run('DELETE FROM copypastas WHERE pasta = "' + row.pasta + '"');
+                      client.action(target, "Pogpega " + context['display-name'] + " Deleted copypasta from the library");
+                  }
+              }, (errr, rows) => {
+                  if (errr) console.error(errr);
+                  client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is not in the library");
+              });
+          }
       }
       if (commandName.toLowerCase().startsWith(">ping")) // See if the >ping command is used and turn on the red led
       {
