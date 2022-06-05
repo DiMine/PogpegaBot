@@ -1,50 +1,50 @@
-const tmi = require('tmi.js');
-const { google } = require('googleapis');
-var XMLHttpRequest = require('xhr2');
-var { PythonShell } = require('python-shell');
-const LED = require('onoff').Gpio;
+const tmi = require('tmi.js'); // Send messages to twitch chat
+const { google } = require('googleapis'); // Interact with apis through google
+var XMLHttpRequest = require('xhr2'); // I have no idea why this is here
+var { PythonShell } = require('python-shell'); // Run python scripts in java (used for the >chat command)
+const LED = require('onoff').Gpio; // Interface with gpio pins to turn the leds on and off
 //const { Server } = require("socket.io");
 //const io = new Server(7270);
-const { Client, Intents } = require('discord.js');
-const sqlite3 = require('sqlite3').verbose();
-const copypastas = new sqlite3.Database('CopypastaLibrary.sqlite3');
-var similarity = require('string-similarity');
+const { Client, Intents } = require('discord.js'); // Interface with a discord bot
+const sqlite3 = require('sqlite3').verbose(); // Interact with .db files
+const copypastas = new sqlite3.Database('CopypastaLibrary.sqlite3'); // Object to store the copypasta library
+var similarity = require('string-similarity'); // Npm package to detect the similarity between strings
 const dcClient = new Client({
   intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.DIRECT_MESSAGES
+    Intents.FLAGS.GUILDS, // Lets the bot see which servers it is in
+    Intents.FLAGS.GUILD_MESSAGES, // Lets the bot read messages from servers it is in
+    Intents.FLAGS.DIRECT_MESSAGES // Lets the bot read messages sent in dms
   ]
 });
-var offline = false;
-var pinged = true;
-var startup = true;
-var soTure = false;
-var fitbitActivity;
-var fitbitSleep;
-var fitbitTokens;
-var status = "";
-var wordle;
-var discordTarget = "#btmc";
-var guess;
-var correctPogu = false;
-var guessCounter = 0;
-var wordleActive = false;
-var servoLocation = 0;
-var today;
-var letters = [];
-const fs = require('fs');
-var Gpio = require('pigpio').Gpio;
-const Http = new XMLHttpRequest();
-const cleverbot = require("cleverbot-free");
-const fetch = require('sync-fetch');
-var count;
+var offline = false; // Whether or not BTMC is currently live
+var pinged = true; // True when someone types >ping, false when the PingerBot responds
+var startup = true; // True until the first message is sent after the script starts running
+var soTure = false; // Usually false, becomes true for 4 seconds when someone says !stoic
+var fitbitActivity; // Store fitbit activity data
+var fitbitSleep; // Store fitbit sleep data
+var fitbitTokens; // Store fitbit oauth tokens
+var status = ""; // A custom status that I can set
+var wordle; // Store the id and status for the wordle api
+var discordTarget = "#btmc"; // The channel where scorepost messages should be sent
+var guess; // The wordle guess to be sent to the api
+var correctPogu = false; // True when the wordle is successfully guessed
+var guessCounter = 0; // Counter for the wordle guesses
+var wordleActive = false; // Whether or not a wordle game is currently active
+var servoLocation = 0; // The current location of the servo motor
+var today; // The current day
+var letters = []; // An array of 0, 1, 2 for determining the leftover letters in wordle
+const fs = require('fs'); // Reads files on the pi
+var Gpio = require('pigpio').Gpio; // Interfaces with gpio pins on the pi to interact with the servo
+const Http = new XMLHttpRequest(); // I have no idea why this is here
+const cleverbot = require("cleverbot-free"); // A way to use cleverbot for free
+const fetch = require('sync-fetch'); // Synchronous api fetching
+var count; // Object to store all the pogpega counts
 fs.readFile('count.json', (err, data) =>
 {
   if (err) console.error(err);
   else count = new Map(Object.entries(JSON.parse(data)));
 });
-var osuUsernames;
+var osuUsernames; // Object to store the links between osu usernames and twitch usernames
 fs.readFile('osuUsernames.json', (err, data) =>
 {
   if (err) console.error(err);
@@ -61,34 +61,34 @@ fs.readFile('fitbit.json', (err, data) =>
   if (err) console.error(err);
   else fitbitTokens = JSON.parse(data);
 });
-require('dotenv').config();
+require('dotenv').config(); // Use environment variables
 refreshDate();
 /*const oauth2Client = new google.auth.OAuth(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
   "https://pogpe.ga/"
 )*/
-var cbotHistory = [];
-var cbotCooldown = 0;
-var blacklist
+var cbotHistory = []; // Array to store the chat history with cleverbot
+var cbotCooldown = 0; // Cooldown to prevent the cleverbot api from being spammed
+var blacklist // Object to store list of blacklisted words for >generate
 fs.readFile('blacklist.json', (err, data) =>
 {
   if (err) console.error(err);
   else blacklist = JSON.parse(data);
 });
 
-copypastas.run("CREATE TABLE IF NOT EXISTS copypastas (pasta)");
+copypastas.run("CREATE TABLE IF NOT EXISTS copypastas (pasta)"); // Create the squlite table for the copypasta database
 
 // Declare variables and stuff for the LEDs
-const ledLive = new LED(17, 'out');
-const ledPing = new LED(27, 'out');
-const ledChat = new LED(22, 'out');
-var ledR = new Gpio(16, { mode: Gpio.OUTPUT });
-var ledG = new Gpio(20, { mode: Gpio.OUTPUT });
-var ledB = new Gpio(21, { mode: Gpio.OUTPUT });
-var color = "";
-var statusRGB = "";
-const motor = new Gpio(18, { mode: Gpio.OUTPUT });
+const ledLive = new LED(17, 'out'); // Blue led that lights up when BTMC is live
+const ledPing = new LED(27, 'out'); // Red led that lights up when someone types >ping
+const ledChat = new LED(22, 'out'); // Green led that is controlled with >led on and >led off
+var ledR = new Gpio(16, { mode: Gpio.OUTPUT }); // Red channel for the RGB led
+var ledG = new Gpio(20, { mode: Gpio.OUTPUT }); // Green channel for the RGB led
+var ledB = new Gpio(21, { mode: Gpio.OUTPUT }); // Blue channel for the RGB led
+var color = ""; // Current color of the RGB led
+var statusRGB = ""; // Emoji version of the RGB led color
+const motor = new Gpio(18, { mode: Gpio.OUTPUT }); // The servo motor
 
 function saveCounter() // Save the pogpega count of users to a .json file
 {
@@ -213,7 +213,6 @@ const opts = {
     'Styx_E_Clap'
   ]
 };
-
 
 dcClient.once('ready', () =>
 {
@@ -803,64 +802,72 @@ function onMessageHandler(target, context, msg, self)
         {
           client.action(target, "Pogpega This is the copypasta library. insert more info here Chatting");
         }
-          if (commandName.toLowerCase().startsWith("new ")) {
-              commandName = commandName.substring(4);
-              var alreadyIn = false;
-              copypastas.each("SELECT * FROM copypastas", (errr, row) => {
-                  if (errr) console.error(errr);
-                  if (similarity.compareTwoStrings(commandName, row.pasta) >= 0.7) alreadyIn = true;
-              }, (errr, rows) => {
-                  if (errr) console.error(errr);
-                  if (!alreadyIn) {
-                      copypastas.run('INSERT INTO copypastas (pasta) VALUES ("' + commandName + '")');
-                      client.action(target, "Pogpega " + context['display-name'] + " Added copypasta to the library");
-                  }
-                  else client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is already in the library");
-              });
-          }
-          else if (commandName.toLowerCase().startsWith("print according to all known laws of aviation, there is no way a bee should be able to fly")) {
-              copypastas.each("SELECT * FROM copypastas", (errr, row) => {
-                  if (errr) console.error(errr);
-                  //console.log(row.pasta);
-                  client.action(target, "Pogpega " + row.pasta);
-              });
-          }
-          else if (commandName.toLowerCase().startsWith("random")) {
-              copypastas.get('SELECT * FROM copypastas ORDER BY RANDOM() LIMIT 1', (errr, row) => {
-                  if (errr) console.error(errr);
-                  //console.log(row.pasta);
-                  if (!row.pasta.includes("I have been informed that you requested that I kill myself. Sorry but I do not take assassination contracts on myself, it would be a conflict of interest and would be unprofessional. If our interests become mutual ")) {
-                      client.action(target, "Pogpega " + row.pasta);
-                  }
-              });
-          }
-          else if (commandName.toLowerCase().startsWith("search ")) {
-              commandName = commandName.substring(7);
-              copypastas.all("SELECT * FROM copypastas", (errr, rows) => {
-                  if (errr) console.error(errr);
-                  var pastaResult = "";
-                  pastaResult = similarity.findBestMatch(commandName, rows.map(a => a.pasta));
-                  console.log(pastaResult.bestMatch);
-                  if (!pastaResult.bestMatch.target.includes("I have been informed that you requested that I kill myself. Sorry but I do not take assassination contracts on myself, it would be a conflict of interest and would be unprofessional. If our interests become mutual ")) {
-                      client.action(target, "Pogpega " + pastaResult.bestMatch.target);
-                  } else {
-                      client.action(target, "Pogpega Tssk you almost made me say that one copypasta thats not good WeirdChamp");
-                  }
-              });
-          }
-          else if (commandName.toLowerCase().startsWith("delete ")) {
-              commandName = commandName.substring(7);
-              copypastas.each("SELECT * FROM copypastas", (errr, row) => {
-                  if (errr) console.error(errr);
-                  if (similarity.compareTwoStrings(commandName, row.pasta) >= 0.7) {
-                      copypastas.run('DELETE FROM copypastas WHERE pasta = "' + row.pasta + '"');
-                      client.action(target, "Pogpega " + context['display-name'] + " Deleted copypasta from the library");
-                  }
-              }, (errr, rows) => {
-                  if (errr) console.error(errr);
-                  client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is not in the library");
-              });
-          }
+        if (commandName.toLowerCase().startsWith("new "))
+        {
+          commandName = commandName.substring(4);
+          var alreadyIn = false;
+          copypastas.each("SELECT * FROM copypastas", (errr, row) =>
+          {
+            if (errr) console.error(errr);
+            if (similarity.compareTwoStrings(commandName, row.pasta) >= 0.7) alreadyIn = true;
+          }, (errr, rows) =>
+          {
+            if (errr) console.error(errr);
+            if (!alreadyIn)
+            {
+              copypastas.run('INSERT INTO copypastas (pasta) VALUES ("' + commandName + '")');
+              client.action(target, "Pogpega " + context['display-name'] + " Added copypasta to the library");
+            }
+            else client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is already in the library");
+          });
+        }
+        else if (commandName.toLowerCase().startsWith("print according to all known laws of aviation, there is no way a bee should be able to fly"))
+        {
+          copypastas.each("SELECT * FROM copypastas", (errr, row) =>
+          {
+            if (errr) console.error(errr);
+            //console.log(row.pasta);
+            client.action(target, "Pogpega " + row.pasta);
+          });
+        }
+        else if (commandName.toLowerCase().startsWith("random"))
+        {
+          copypastas.get('SELECT * FROM copypastas ORDER BY RANDOM() LIMIT 1', (errr, row) =>
+          {
+            if (errr) console.error(errr);
+            //console.log(row.pasta);
+            client.action(target, "Pogpega " + row.pasta);
+          });
+        }
+        else if (commandName.toLowerCase().startsWith("search "))
+        {
+          commandName = commandName.substring(7);
+          copypastas.all("SELECT * FROM copypastas", (errr, rows) =>
+          {
+            if (errr) console.error(errr);
+            var pastaResult = "";
+            pastaResult = similarity.findBestMatch(commandName, rows.map(a => a.pasta));
+            console.log(pastaResult.bestMatch);
+            client.action(target, "Pogpega " + pastaResult.bestMatch.target);
+          });
+        }
+        else if (commandName.toLowerCase().startsWith("delete ") && (context.username === 'thatoneguywhospamspogpega' || context.username === 'nekopavel' || context.username === 'dimine0704'))
+        {
+          commandName = commandName.substring(7);
+          copypastas.each("SELECT * FROM copypastas", (errr, row) =>
+          {
+            if (errr) console.error(errr);
+            if (similarity.compareTwoStrings(commandName, row.pasta) >= 0.9)
+            {
+              copypastas.run('DELETE FROM copypastas WHERE pasta = "' + row.pasta + '"');
+              client.action(target, "Pogpega " + context['display-name'] + " Deleted copypasta from the library");
+            }
+          }, (errr, rows) =>
+          {
+            if (errr) console.error(errr);
+            client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is not in the library");
+          });
+        }
       }
       if (commandName.toLowerCase().startsWith(">ping")) // See if the >ping command is used and turn on the red led
       {
