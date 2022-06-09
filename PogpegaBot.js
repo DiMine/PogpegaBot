@@ -1147,7 +1147,7 @@ function onMessageHandler(target, context, msg, self)
         wordleActive = false;
         client.say(target, "/me Pogpega wordle stopped");
       }
-      else if (commandName.toLowerCase().startsWith(">wtfhesonlinewhyisthebotstillon") && context.username === 'thatoneguywhospamspogpega' || context.username === 'nekopavel') 
+      else if (commandName.toLowerCase().startsWith(">wtfhesonlinewhyisthebotstillon") && (context.username === 'thatoneguywhospamspogpega' || context.username === 'nekopavel')) 
       {
         console.log("Oops");
         ledLive.writeSync(1);
