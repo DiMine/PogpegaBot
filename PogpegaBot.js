@@ -1476,6 +1476,11 @@ function resetLetters() // Reset the letter array for wordle
   letters = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,];
 }
 
+// given a letter, return the index of the letter in the alphabet
+function getLetterIndex(letter) {
+  return letter.charCodeAt(0) - 'a'.charCodeAt(0);
+}
+
 function l2n(letter) // Change characters to numbers 0-25
 {
   switch (letter)
