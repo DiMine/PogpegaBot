@@ -129,25 +129,31 @@ function ping()
     },
     method: "GET"
   }).json();
-  if (checkIfLive.data.length == 0) 
+  try
   {
-    if (offline === false) 
+    if (checkIfLive.data.length == 0) 
     {
-      offline = true;
-      console.log("BTMC is now offline");
-      ledLive.writeSync(0);
-      dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say BTMC is now offline");
+      if (offline === false) 
+      {
+        offline = true;
+        console.log("BTMC is now offline");
+        ledLive.writeSync(0);
+        dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say BTMC is now offline");
+      }
     }
-  }
-  else 
+    else 
+    {
+      if (offline === true) 
+      {
+        offline = false;
+        console.log("BTMC is now online");
+        ledLive.writeSync(1);
+        dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say BTMC is now online");
+      }
+    }
+  } catch (erratic) 
   {
-    if (offline === true) 
-    {
-      offline = false;
-      console.log("BTMC is now online");
-      ledLive.writeSync(1);
-      dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say BTMC is now online");
-    }
+    dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say absolutely nothing :Chatting:");
   }
   /*var url = 'https://decapi.me/twitch/uptime/btmc?' + Date.now();
   Http.open("GET", url);
@@ -598,8 +604,8 @@ function onMessageHandler(target, context, msg, self)
                   key: wordle.key,
                 })
               }).json();
-              temp2 = " Pogpega HYPERCLAP +50 Pogpegas"
-              console.log(`* guessed correctly (word: ` + end.answer + `)`);
+              temp2 = " Pogpega HYPERCLAP +50 Pogpegas @" + context['display-name'];
+              console.log(`* ${context['display-name']} guessed correctly (word: ` + end.answer + `)`);
               wordleActive = false;
               addPogpegas(context.username, 50);
               correctPogu = false;
@@ -753,6 +759,7 @@ function onMessageHandler(target, context, msg, self)
           {
             client.say(target, "/me Pogpega @" + context['display-name'] + " changed the color to " + color);
             console.log(`* color changed`);
+
           }
         }
         else if (commandName.toLowerCase() === ">led color") // Get the current color of the rgb led
@@ -1147,6 +1154,12 @@ function onMessageHandler(target, context, msg, self)
         wordleActive = false;
         client.say(target, "/me Pogpega wordle stopped");
       }
+      else if (commandName.toLowerCase().startsWith(">whewhesofflineagain") && (context.username === 'thatoneguywhospamspogpega' || context.username === 'nekopavel')) 
+      {
+        console.log("Choffline atting");
+        ledLive.writeSync(0);
+        offline = true;
+      }
       else if (commandName.toLowerCase().startsWith(">wtfhesonlinewhyisthebotstillon") && (context.username === 'thatoneguywhospamspogpega' || context.username === 'nekopavel')) 
       {
         console.log("Oops");
@@ -1477,11 +1490,12 @@ function resetLetters() // Reset the letter array for wordle
 }
 
 // given a letter, return the index of the letter in the alphabet
-function getLetterIndex(letter) {
+function getLetterIndex(letter)
+{
   return letter.charCodeAt(0) - 'a'.charCodeAt(0);
 }
 
-function l2n(letter) // Change characters to numbers 0-25
+function l2n(letter) // Change characters to numbers 0-25 in the most inefficient way possible
 {
   switch (letter)
   {
@@ -1541,7 +1555,8 @@ function l2n(letter) // Change characters to numbers 0-25
       return 0;
   }
 }
-function n2l(number) // Change numbers 0-25 to characters
+
+function n2l(number) // Change numbers 0-25 to characters in the most inefficient way possible
 {
   switch (number)
   {
