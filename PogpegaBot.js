@@ -33,7 +33,7 @@ var wordleActive = false; // Whether or not a wordle game is currently active
 var servoLocation = 0; // The current location of the servo motor
 var today; // The current day
 var letters = []; // An array of 0, 1, 2 for determining the leftover letters in wordle
-var startTime = time.now(); // The time at which PogpegaBot starts running
+var startTime = Date.now(); // The time at which PogpegaBot starts running
 const fs = require('fs'); // Reads files on the pi
 var Gpio = require('pigpio').Gpio; // Interfaces with gpio pins on the pi to interact with the servo
 const Http = new XMLHttpRequest(); // Secondary live checker
@@ -1202,7 +1202,7 @@ function onMessageHandler(target, context, msg, self)
       }
       else if (commandName.toLowerCase().startsWith(">uptime")) 
       {
-        timeSinceStart = time.now() - startTime;
+        timeSinceStart = Date.now() - startTime;
         timeSinceStart /= 60000
         timeSinceStart = minParse(timeSinceStart)
         client.action(target, "Pogpega PogpegaBot Uptime: " + timeSinceStart);
