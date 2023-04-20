@@ -1,6 +1,6 @@
 const tmi = require('tmi.js'); // Send messages to twitch chat
 const { google } = require('googleapis'); // Interact with apis through google
-var XMLHttpRequest = require('xhr2'); // I have no idea why this is here
+var XMLHttpRequest = require('xhr2'); // Secondary live checker
 var { PythonShell } = require('python-shell'); // Run python scripts in java (used for the >chat command)
 const LED = require('onoff').Gpio; // Interface with gpio pins to turn the leds on and off
 //const { Server } = require("socket.io");
@@ -33,9 +33,10 @@ var wordleActive = false; // Whether or not a wordle game is currently active
 var servoLocation = 0; // The current location of the servo motor
 var today; // The current day
 var letters = []; // An array of 0, 1, 2 for determining the leftover letters in wordle
+var startTime = time.now(); // The time at which PogpegaBot starts running
 const fs = require('fs'); // Reads files on the pi
 var Gpio = require('pigpio').Gpio; // Interfaces with gpio pins on the pi to interact with the servo
-const Http = new XMLHttpRequest(); // I have no idea why this is here
+const Http = new XMLHttpRequest(); // Secondary live checker
 const cleverbot = require("cleverbot-free"); // A way to use cleverbot for free
 const fetch = require('sync-fetch'); // Synchronous api fetching
 var count; // Object to store all the pogpega counts
@@ -114,6 +115,9 @@ const commandList = [">led", ">pogpegafarm", ">deceit", "!prefix", "Use code", "
 var guessing = false;
 var guessIndex = 0;
 
+const owobotCommands = [">rs", ">c", ">sc", ">osu", ">osutop", ">mania", ">maniatop", ">taiko", ">taikotop", ">ctb", ">ctbtop", ">map"];
+const owobotCommandsSpace = [">rs ", ">c ", ">sc ", ">osu ", ">osutop ", ">mania ", ">maniatop ", ">taiko ", ">taikotop ", ">ctb ", ">ctbtop ", ">map "];
+const moderators = ["dimine0704", "thatoneguywhospamspogpega", "nekopavel", "enyoti"];
 /*io.on("connection", (socket) =>
 {
   socket.emit("test", "does this work now?") // lol no it doesnt
@@ -151,29 +155,51 @@ function ping()
         dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say BTMC is now online");
       }
     }
-  } catch (erratic) 
-  {
-    dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say absolutely nothing :Chatting:");
   }
-  /*var url = 'https://decapi.me/twitch/uptime/btmc?' + Date.now();
+  catch (erratic) 
+  {
+    dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources are useless, checking secondary source TriFi");
+    ping2();
+  }
+}
+function ping2() 
+{
+  var url = 'https://decapi.me/twitch/uptime/btmc?' + Date.now();
   Http.open("GET", url);
   Http.send();
-  if (Http.responseText.includes("Too Many Requests")) 
+  console.log(Http.responseText);
+  if (Http.responseText.includes("offline")) 
+  {
+    if (offline === false) 
+    {
+      offline = true;
+      console.log("BTMC is now offline");
+      ledLive.writeSync(0);
+      dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My secondary source says BTMC is now offline");
+    }
+  }
+  else if (Http.responseText.includes("second") || Http.responseText.includes("minute") || Http.responseText.includes("hour")) 
+  {
+    if (offline === true) 
+    {
+      offline = false;
+      console.log("BTMC is now online");
+      ledLive.writeSync(1);
+      dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My secondary source says BTMC is now online");
+    }
+  }
+  else if (Http.responseText.includes("many requests")) 
+  {
+    dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say to stop pinging them so much :Chatting:");
+  }
+  else
   {
     dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources say absolutely nothing :Chatting:");
   }
-  else if (Http.responseText.includes("offline")) 
-  {
-   
-  }
-  else if (!Http.responseText.includes("offline")) 
-  {
-    
-  }*/
 }
-
 function checkFollow(userID)
 {
+  return true; //JUST DO THIS FOR NOW BECAUSE TWITCH API KINDA SUCKS AND ISNT WORKING
   if (userID === '726306594') return true; // Returns true if I use the command myself
   var following = fetch("https://api.twitch.tv/helix/users/follows?to_id=726306594&from_id=" + userID + "&?" + Date.now(), {
     headers: {
@@ -203,12 +229,11 @@ Http.onreadystatechange = (e) =>
 // Define configuration options
 const opts = {
   identity: {
-    username: "ThatOneBotWhoSpamsPogpega",
+    username: "PogpegaBot",
     password: process.env.TOKEN
   },
   channels: [
     'ThatOneGuyWhoSpamsPogpega',
-    'ThatOneBotWhoSpamsPogpega',
     'ThatOneBotWhoPingsPogpega',
     'pogpegabot',
     'btmc',
@@ -216,7 +241,8 @@ const opts = {
     'NekoPavel',
     'NekoChattingBot',
     'DiMine0704',
-    'Styx_E_Clap'
+    'Styx_E_Clap',
+    'MochisHarvey'
   ]
 };
 
@@ -249,7 +275,7 @@ dcClient.on('messageCreate', (message) =>
         scorepost = scorepost.substring(message.embeds[0].description.indexOf(">") + 1);
       }
       scorepost = scorepost.concat(" | ").concat(message.embeds[0].footer.text);
-      scorepost = scorepost.replace(/▸/g, '|').replace(/_/g, '').replace(/Score Set /g, '').replace(/<:rankingS:462313719762911233>/g, 'S').replace(/<:rankingSH:462313722732347401>/g, 'SH').replace(/<:rankingA:462313719083565066>/g, 'A').replace(/<:rankingB:462313719574167562>/g, 'B').replaceAll("<:rankingX:462313722736672780>", 'X').replaceAll("<:rankingXH:462313722556186626>", 'XH').replaceAll("<:rankingF:462313719741808670>", 'F').replaceAll("<:rankingC:462313719511121921>", 'C').replaceAll("<:rankingD:462313719767105536>", 'D');
+      scorepost = scorepost.replace(/\n/g, '').replace(/▸/g, '|').replace(/_/g, '').replace(/Score Set /g, '').replace(/<:rankingS:462313719762911233>/g, 'S').replace(/<:rankingSH:462313722732347401>/g, 'SH').replace(/<:rankingA:462313719083565066>/g, 'A').replace(/<:rankingB:462313719574167562>/g, 'B').replaceAll("<:rankingX:462313722736672780>", 'X').replaceAll("<:rankingXH:462313722556186626>", 'XH').replaceAll("<:rankingF:462313719741808670>", 'F').replaceAll("<:rankingC:462313719511121921>", 'C').replaceAll("<:rankingD:462313719767105536>", 'D');
       scorepost = scorepost.replace("1. ", '| 1⃣').replace("2. ", '| 2⃣').replace("3. ", '| 3⃣').replace("4. ", '| 4⃣').replace("5. ", '| 5⃣');
       if (scorepost.startsWith("Top 5 osu! Standard Plays for")) 
       {
@@ -274,6 +300,20 @@ dcClient.on('messageCreate', (message) =>
         scorepost = scorepost.join('|');
         scorepost = scorepost.replaceAll("||", "|");
       }
+      else if (scorepost.includes("**Download:**")) 
+      {
+        scorepost = scorepost.replace("**Download:**", "");
+        scorepost = scorepost.split(" | ");
+        scorepost[0] = scorepost[0].substring(0, scorepost.indexOf("[map]("));
+        scorepost[1] = "";
+        scorepost[2] = "";
+        scorepost[3] = "";
+        scorepost[4] = scorepost[4].substring(scorepost[4].indexOf("[sayobot](https://") + 43)
+
+        scorepost = scorepost.join('|');
+        scorepost = scorepost.replaceAll("||", "|");
+      }
+      console.log(scorepost);
       client.action(discordTarget, "Pogpega " + scorepost);
     }
   }
@@ -300,8 +340,9 @@ function onMessageHandler(target, context, msg, self)
   if (startup)
   {
     startup = false;
+    dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> PogpegaBot restarted");
     ping();
-    client.action("#thatonebotwhospamspogpega", "Pogpega Starting PogpegaBot TriFi");
+    client.action("#pogpegabot", "Pogpega Starting PogpegaBot TriFi");
   }
   // Remove whitespace from message
   var commandName = msg.trim().replaceAll('󠀀', "").replaceAll('￼', "");
@@ -317,14 +358,14 @@ function onMessageHandler(target, context, msg, self)
     {
       count.set(context.username, pogpegaCount); // Add them to it
     }
-
+    /*
     // If someone donates $7.27
     if (context.username === 'streamelements' && commandName.includes('just tipped $7.27 PogU HYPERCLAP')) 
     {
       sleep(1000);
-      client.say(target, 'Pogpega WYSI '); // This is the only thing that works in online chat
+      client.say(target, 'Pogpega WYSI '); 
       console.log(`* I SEE IT`);
-    }
+    }*/
 
     // Remove the trigger for >ping when there's a response from the pinger bot
     if (context.username === 'thatonebotwhopingspogpega')
@@ -346,7 +387,7 @@ function onMessageHandler(target, context, msg, self)
     {
       if (target === "#btmc") // If a message is going to BTMC's chat
       {
-        target = "#thatonebotwhospamspogpega"; // Redirect it to the bot's chat
+        target = "#pogpegabot"; // Redirect it to the bot's chat
       }
     }
 
@@ -422,7 +463,7 @@ function onMessageHandler(target, context, msg, self)
       {
         client.action(target, "Pogpega @" + context['display-name'] + " Code for the PogpegaBot can be found at pogpe.ga/code");
       }
-      else if (commandName === '>commands') // Send the link to the commands list
+      else if (commandName === '>commands' || commandName.toLowerCase().startsWith(">help")) // Send the link to the commands list
       {
         client.action(target, '@' + context['display-name'] + ' List of commands for the Pogpega bots: https://pogpe.ga/bots');
         console.log(`* command doc sent`);
@@ -482,6 +523,9 @@ function onMessageHandler(target, context, msg, self)
         {
           client.say(target, "/me Pogpega Tssk @" + context['display-name'] + " is not following");
         }
+      }
+      else if (commandName.toLowerCase().startsWith(">gamba ")) {
+        // add gamba code
       }
       else if (commandName.toLowerCase().startsWith(">generate ")) // Send a prompt to an AI to generate a bunch of text
       {
@@ -554,7 +598,7 @@ function onMessageHandler(target, context, msg, self)
         request[0] = request[0].toLowerCase();
         if (parseInt(request[1]) > 0)
         {
-          if (count.has(request[0]) && count.has(context.username) && count.get(context.username) >= parseInt(request[1]) && request[0] != "kexiv_")
+          if (count.has(request[0]) && count.has(context.username) && count.get(context.username) >= parseInt(request[1]) && request[0] != "kexiv_" && request[0] != "hrfarmer_")
           {
             count.set(context.username, count.get(context.username) - parseInt(request[1]));
             count.set(request[0], count.get(request[0]) + parseInt(request[1]));
@@ -563,6 +607,10 @@ function onMessageHandler(target, context, msg, self)
           else if (request[0] === 'kexiv_')
           {
             client.action(target, "Pogpega Tssk kexiv has his thingy disabled");
+          }
+          else if (request[0] === 'hrfarmer_')
+          {
+            client.action(target, "Pogpega Tssk hr parmer has the thing disabled");
           }
           else 
           {
@@ -789,6 +837,25 @@ function onMessageHandler(target, context, msg, self)
         saveUsernames();
         client.say(target, "/me Pogpega @" + context['display-name'] + " has been linked to osu user " + commandName);
       }
+      else if (commandName.toLowerCase() === '>manualcheck' && moderators.includes(context.username)) 
+      {
+        ping();
+        console.log("* Manually triggered an online check");
+      }
+      else if (commandName.toLowerCase() === '>manualoffline' && moderators.includes(context.username)) 
+      {
+        offline = true;
+        console.log("I have been told that BTMC is now offline");
+        ledLive.writeSync(0);
+        dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> I have been told BTMC is now offline");
+      }
+      else if (commandName.toLowerCase() === '>manualonline' && moderators.includes(context.username)) 
+      {
+        offline = false;
+        console.log("I have been told that BTMC is now online");
+        ledLive.writeSync(1);
+        dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> I have been told BTMC is now online");
+      }
       else if (commandName.toLowerCase() === '>maxfarm') // Farm the max amount of pogpegas in a single message
       {
         client.say(target, 'Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega Pogpega');
@@ -828,7 +895,7 @@ function onMessageHandler(target, context, msg, self)
             else client.action(target, "Pogpega Tssk " + context['display-name'] + " That copypasta is already in the library");
           });
         }
-        else if (commandName.toLowerCase().startsWith("print according to all known laws of aviation, there is no way a bee should be able to fly"))
+        else if (commandName.toLowerCase().startsWith("print according to all known laws of aviation, there is no way a bee should be able to fly") && moderators.includes(context.username))
         {
           copypastas.each("SELECT * FROM copypastas", (errr, row) =>
           {
@@ -858,7 +925,7 @@ function onMessageHandler(target, context, msg, self)
             client.action(target, "Pogpega " + pastaResult.bestMatch.target);
           });
         }
-        else if (commandName.toLowerCase().startsWith("delete ") && (context.username === 'thatoneguywhospamspogpega' || context.username === 'nekopavel' || context.username === 'dimine0704'))
+        else if (commandName.toLowerCase().startsWith("delete ") && moderators.includes(context.username))
         {
           commandName = commandName.substring(7);
           copypastas.each("SELECT * FROM copypastas", (errr, row) =>
@@ -900,7 +967,7 @@ function onMessageHandler(target, context, msg, self)
         client.say(target, `/me Pogpega POGPEGA FARMING`);
         console.log(`* POGPEGA FARMING`);
       }
-      else if (commandName.toLowerCase() === ">pogpegas") // Tells the user their pogpega count
+      else if (commandName.toLowerCase() === ">pogpegas" || commandName.toLowerCase() === ">bal") // Tells the user their pogpega count
       {
         client.say(target, "/me Pogpega @" + context['display-name'] + " has " + count.get(context.username) + " Pogpegas");
       }
@@ -955,7 +1022,7 @@ function onMessageHandler(target, context, msg, self)
             {
               tempLine += commandName;
             }
-            if (target != "#thatoneguywhospamspogpega" && target != "#thatonebotwhospamspogpega") 
+            if (target != "#thatoneguywhospamspogpega" && target != "#pogpegabot") 
             {
               sleep(2001);
             }
@@ -969,7 +1036,7 @@ function onMessageHandler(target, context, msg, self)
             {
               tempLine += commandName;
             }
-            if (target != "#thatoneguywhospamspogpega" && target != "#thatonebotwhospamspogpega") 
+            if (target != "#thatoneguywhospamspogpega" && target != "#pogpegabot") 
             {
               sleep(2001);
             }
@@ -988,7 +1055,7 @@ function onMessageHandler(target, context, msg, self)
         client.say(target, "/me Pogpega " + commandName.substring(7));
         console.log('* Chatting');
       }
-      else if (commandName.toLowerCase().startsWith(">reset")/* || commandName.startsWith("GunL >reset"))*/ && context.username === "thatoneguywhospamspogpega")
+      else if (commandName.toLowerCase().startsWith(">reset")/* || commandName.startsWith("GunL >reset"))*/ && moderators.includes(context.username))
       {
         cbotHistory = [];
         client.say(target, "/me Pogpega Cleared the conversation");
@@ -1083,7 +1150,7 @@ function onMessageHandler(target, context, msg, self)
         commandName = commandName.substring(12);
         try 
         {
-          commandName = commandName.match(/(?<=(["']\b))(?:(?=(\\?))\2.)*?(?=\1)/g);
+          commandName = commandName.match(/(?<=(["']\b))(?:(?=(\\?))\2.)*?(?=\1)/g); // I have no idea what this means
           console.log(commandName);
           var similarScore = similarity.compareTwoStrings(commandName[0], commandName[1]);
           client.action(target, "Pogpega @" + context['display-name'] + " Similarity: " + similarScore);
@@ -1133,6 +1200,14 @@ function onMessageHandler(target, context, msg, self)
           console.error(err);
         }
       }
+      else if (commandName.toLowerCase().startsWith(">uptime")) 
+      {
+        timeSinceStart = time.now() - startTime;
+        timeSinceStart /= 60000
+        timeSinceStart = minParse(timeSinceStart)
+        client.action(target, "Pogpega PogpegaBot Uptime: " + timeSinceStart);
+
+      }
       else if (commandName.toLowerCase() === ">wordle") // Play wordle
       {
         if (!wordleActive) 
@@ -1149,22 +1224,10 @@ function onMessageHandler(target, context, msg, self)
           client.action(target, "Pogpega there is already a wordle active");
         }
       }
-      else if (commandName.toLowerCase() === ">wordle stop" && context.username === "thatoneguywhospamspogpega") // Stop the currently active wordle
+      else if (commandName.toLowerCase() === ">wordle stop" && moderators.includes(context.username)) // Stop the currently active wordle
       {
         wordleActive = false;
         client.say(target, "/me Pogpega wordle stopped");
-      }
-      else if (commandName.toLowerCase().startsWith(">whewhesofflineagain") && (context.username === 'thatoneguywhospamspogpega' || context.username === 'nekopavel')) 
-      {
-        console.log("Choffline atting");
-        ledLive.writeSync(0);
-        offline = true;
-      }
-      else if (commandName.toLowerCase().startsWith(">wtfhesonlinewhyisthebotstillon") && (context.username === 'thatoneguywhospamspogpega' || context.username === 'nekopavel')) 
-      {
-        console.log("Oops");
-        ledLive.writeSync(1);
-        offline = false;
       }
       else if (commandName.toLowerCase().startsWith(">calories")) // Output the number of calories I've burned today
       {
@@ -1188,7 +1251,7 @@ function onMessageHandler(target, context, msg, self)
         client.say(target, "/me Pogpega Current step count for today: " + fitbitActivity.summary.steps);
         console.log(`* said steps (` + fitbitActivity.summary.steps + `)`);
       }
-      else if (commandName.toLowerCase() === ">rs" || commandName === ">c" || commandName === ">sc" || commandName === ">osutop" || commandName === ">osu" || commandName === ">mania") // Discord osu bot commands
+      else if (owobotCommands.includes(commandName)) // Discord osu bot commands
       {
         if (osuUsernames.has(context.username)) // If the user has a linked osu username
         {
@@ -1200,7 +1263,7 @@ function onMessageHandler(target, context, msg, self)
           client.say(target, "/me Pogpega @" + context['display-name'] + " is not currently linked to an osu user, do >link {osu username} to link it");
         }
       }
-      else if (commandName.toLowerCase().startsWith(">rs ") || commandName.startsWith(">c ") || commandName.startsWith(">sc ") || commandName.startsWith(">osutop ") || commandName.startsWith(">osu ") || commandName.startsWith(">mania "))
+      else if (owobotCommandsSpace.includes(commandName.split(" ")[0].concat(" ")))
       {
         var tempMsg = commandName.split(" ");
         commandName = tempMsg[0];
@@ -1327,7 +1390,8 @@ function onMessageHandler(target, context, msg, self)
     } 
     else 
     {*/
-    client.say(target, "/me Pogpega Chatting Error: " + errororor.message);
+    if (offline) client.say(target, "/me Pogpega Chatting Error: " + errororor.message);
+    else client.say('#pogpegabot', "/me Pogpega Chatting Error: " + errororor.message);
     //}
   }
 }
