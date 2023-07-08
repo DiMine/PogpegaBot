@@ -158,7 +158,6 @@ function ping()
   }
   catch (erratic) 
   {
-    dcClient.channels.cache.get("972643128613933156").send("<:Botpega:972646249578762280> My sources are useless, checking secondary source TriFi");
     ping2();
   }
 }
@@ -414,19 +413,19 @@ function onMessageHandler(target, context, msg, self)
       else if (commandName.toLowerCase() === ">cam" || commandName.toLowerCase() === ">camera") 
       {
         //client.action(target, "Pogpega @" + context['display-name'] + " The camera for the led and servo is at pogpe.ga/camera");
-        client.action(target, "Pogpega @" + context['display-name'] + " Instructions to see the camera are at pogpe.ga/rtsp (can't keep the twitch stream on 24/7)");
+        client.action(target, "Pogpega @" + context['display-name'] + " Instructions to see the camera are at pogpe.ga/rtsp (can't keep the twitch stream on 24/7) (also pogpe.ga is currently broken)");
       }
       else if (commandName.toLowerCase().startsWith(">cam @"))
       {
         commandName = commandName.substring(5);
         //client.action(target, "Pogpega @" + commandName + " The camera for the led and servo can be found at pogpe.ga/camera");
-        client.action(target, "Pogpega @" + commandName + " Instructions to see the camera are at pogpe.ga/rtsp (can't keep the twitch stream on 24/7)");
+        client.action(target, "Pogpega @" + commandName + " Instructions to see the camera are at pogpe.ga/rtsp (can't keep the twitch stream on 24/7) (also pogpe.ga is currently broken)");
       }
       else if (commandName.toLowerCase().startsWith(">camera @"))
       {
         commandName = commandName.substring(8);
         //client.action(target, "Pogpega @" + commandName + " The camera for the led and servo can be found at pogpe.ga/camera");
-        client.action(target, "Pogpega @" + commandName + " Instructions to see the camera are at pogpe.ga/rtsp (can't keep the twitch stream on 24/7)");
+        client.action(target, "Pogpega @" + commandName + " Instructions to see the camera are at pogpe.ga/rtsp (can't keep the twitch stream on 24/7) (also pogpe.ga is currently broken)");
       }
       else if (commandName.toLowerCase().startsWith(">cbot ")) // Sends a message to cleverbot
       {
@@ -461,11 +460,11 @@ function onMessageHandler(target, context, msg, self)
       }
       else if (commandName.toLowerCase().startsWith(">code")) // Send the link to the pogpegabot github
       {
-        client.action(target, "Pogpega @" + context['display-name'] + " Code for the PogpegaBot can be found at pogpe.ga/code");
+        client.action(target, "Pogpega @" + context['display-name'] + " Code for the PogpegaBot can be found at pogpe.ga/code (also pogpe.ga is currently broken)");
       }
       else if (commandName === '>commands' || commandName.toLowerCase().startsWith(">help")) // Send the link to the commands list
       {
-        client.action(target, '@' + context['display-name'] + ' List of commands for the Pogpega bots: https://pogpe.ga/bots');
+        client.action(target, '@' + context['display-name'] + ' List of commands for the Pogpega bots: https://pogpe.ga/bots (also pogpe.ga is currently broken)');
         console.log(`* command doc sent`);
       }
       else if (commandName.toLowerCase().startsWith(">deadchat")) // Chatting
@@ -1202,9 +1201,10 @@ function onMessageHandler(target, context, msg, self)
       }
       else if (commandName.toLowerCase().startsWith(">uptime")) 
       {
-        timeSinceStart = Date.now() - startTime;
-        timeSinceStart /= 60000
-        timeSinceStart = minParse(timeSinceStart)
+        timeSinceStart = Date.now() - startTime; // Get the uptime in ms
+        timeSinceStart /= 60000 // Convert the ms to minutes
+        timeSinceStart = Math.floor(timeSinceStart()); // Round the minutes
+        timeSinceStart = minParse(timeSinceStart); // Parse the minutes into hours and minutes
         client.action(target, "Pogpega PogpegaBot Uptime: " + timeSinceStart);
 
       }
