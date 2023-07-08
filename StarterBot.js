@@ -1,4 +1,4 @@
-const { Console } = require('console');
+//const { Console } = require('console');
 const tmi = require('tmi.js');
 var XMLHttpRequest = require('xhr2');
 var offline = false;
@@ -10,6 +10,7 @@ require('dotenv').config();
 //var pogpegaBot;
 const Discord = require('discord-user-bots');
 var dcClient = new Discord.Client(process.env.DISCORD_ALT_TOKEN);
+const moderators = ["dimine0704", "thatoneguywhospamspogpega", "nekopavel", "enyoti"];
 //var osupingBot = exec('osupingbot.js');
 var lastTime = Date.now();
 // Ping an api to see if BTMC is live
@@ -20,7 +21,7 @@ function ping()
   Http.send();
   if (Http.responseText.includes("offline")) 
   {
-    if (offline === false) 
+    if (!offline) 
     {
       offline = true;
       console.log("BTMC is now offline");
@@ -28,7 +29,7 @@ function ping()
   }
   else if (!Http.responseText.includes("offline")) 
   {
-    if (offline === true) 
+    if (offline) 
     {
       offline = false;
       console.log("BTMC is now online");
@@ -72,7 +73,7 @@ client.connect();
 function onMessageHandler(target, context, msg, self)
 {
   if (self) { return; } // Ignore messages from the bot
-  ping(); // Check to see if ed is online
+  if (chance(20)) ping(); // Check to see if ed is online
 
   if (context.username == 'thatonebotwhospamspogpega' || context.username == 'pogpegabot') broken = false;
 
@@ -88,7 +89,20 @@ function onMessageHandler(target, context, msg, self)
   }*/
 
   if (!offline && target === "#btmc") target = "#thatonebotwhospamspogpega";
-  if (/*context.username === 'streamelements' && */commandName.startsWith('Use code') && chance(15)) 
+
+  if (commandName.startsWith('>manualonline') && moderators.includes(context.username)) 
+  {
+    offline = false;
+    console.log("BTMC is now online");
+    sendMessage('<:Botpega:972646249578762280> I have been told BTMC is now online', "972643128613933156");
+  }
+  else if (commandName.startsWith('>manualoffline') && moderators.includes(context.username)) 
+  {
+    offline = true;
+    console.log("BTMC is now offline");
+    sendMessage('<:Botpega:972646249578762280> I have been told BTMC is now offline', "972643128613933156");
+  }
+  else if (/*context.username === 'streamelements' && */commandName.startsWith('Use code') && chance(15)) 
   {
     client.say(target, '/me Pogpega 👆 Turn it off and on again !!! ');
     console.log(`* gfuel`);
@@ -104,6 +118,7 @@ function onMessageHandler(target, context, msg, self)
     {
       client.say(target, "/me Pogpega Looks like the >rs function isnt working. Lets fix that with a controlled shock MEGALUL Stab MrDestructoid");
       throw new Error("Chatting");
+      //dcClient.discord_reconnect();
       //Program.restart();
       //dcClient = "";
       //dcClient = new Discord.Client(process.env.DISCORD_ALT_TOKEN);
@@ -120,9 +135,10 @@ function onMessageHandler(target, context, msg, self)
   else if (commandName.startsWith(">rs")) 
   {
     broken = true;
-    setTimeout(() => {
+    setTimeout(() =>
+    {
       if (broken) client.action(target, "Pogpega @" + context['display-name'] + " is >rs not working? Try typing >shock to restart its function");
-    }, 30000);
+    }, 10000);
   }
 }
 
@@ -136,33 +152,44 @@ function chance(outOf)
 dcClient.on.ready = function ()
 {
   console.log("Client online");
-};
+  sendMessage('<:Botpega:972646249578762280> StarterBot Online', "972643128613933156")
+  dcClient.change_status('online');
+  dcClient.set_custom_status({ text: `t; Discord's a bitch ass motherfucker, it pissed on my fucking username. That's right, it took its blurple stupid blog out and i`,})
+}
+
 dcClient.on.message_create = function (message) 
 {
   console.log(message.content);
   if (message.channel_id === "967134443393400922" && message.author.username === "PogpegaBot") 
   {
-    dcClient.send(
-      "967134443393400922", // Channel to send in
-      {
-        content: message.content, // Content of the message to send (Optional when sending stickers) (Default null)
-        embeds: [], // Embeds to send with your message (Not optional, must be an array, can be unset for default) (Default empty array)
-        allowed_mentions: {
-          // Allow mentions settings (Not optional, but can be unset for default) (Default all true mentions object)
-          allowUsers: true, // Allow message to ping user (Default true)
-          allowRoles: true, // Allow message to ping roles (Default true)
-          allowEveryone: true, // Allow message to ping @everyone and @here (Default true)
-          allowRepliedUser: true, // If the message is a reply, ping the user you are replying to (Default true)
-        },
-        components: [], // Message components (Not optional, must be an array, can be unset for default) (Default empty array)
-        stickers: [], // Stickers to go with your message (Not optional, must be an array, can be unset for default) (Default empty array)
-      }
-    );
+    sendMessage(message.content, "967134443393400922")
   }
+}
+
+
+function sendMessage(text, channel) 
+{
+  dcClient.send(
+    channel, // Channel to send in
+    {
+      content: text, // Content of the message to send (Optional when sending stickers) (Default null)
+      embeds: [], // Embeds to send with your message (Not optional, must be an array, can be unset for default) (Default empty array)
+      allowed_mentions: {
+        // Allow mentions settings (Not optional, but can be unset for default) (Default all true mentions object)
+        allowUsers: true, // Allow message to ping user (Default true)
+        allowRoles: true, // Allow message to ping roles (Default true)
+        allowEveryone: true, // Allow message to ping @everyone and @here (Default true)
+        allowRepliedUser: true, // If the message is a reply, ping the user you are replying to (Default true)
+      },
+      components: [], // Message components (Not optional, must be an array, can be unset for default) (Default empty array)
+      stickers: [], // Stickers to go with your message (Not optional, must be an array, can be unset for default) (Default empty array)
+    }
+  );
 }
 
 dcClient.on.discord_disconnect = function () 
 {
+  //dcClient.discord_reconnect();
   client.action('#pogpegabot', "Botpega API disconnected, auto-restarting script");
   throw new Error("Chatting");
 }
@@ -182,3 +209,8 @@ function onConnectedHandler(addr, port)
   console.log(`* Connected to ${addr}:${port}`);
   client.action('#pogpegabot', "Botpega Starting StarterBot TriFi");
 }
+
+// Use setInterval to call sendMessage every 40 minutes
+setInterval(function () {
+  sendMessage('<:Botpega:972646249578762280>', '967134443393400922')
+}, 2400000);

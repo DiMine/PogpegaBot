@@ -8,6 +8,8 @@ package-lock.json
 osupingbot.js
 osuUsernames.json
 CopypastaLibrary.sqlite3
+logs/
+node_modules/
 
 
 # EVERYTHING BELOW THIS LINE I JUST COPIED AND PASTED :Chatting:
